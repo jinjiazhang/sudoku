@@ -31,7 +31,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void _startNewGame() async {
     // 根据滑动条的值获取对应的难度
     GameDifficulty difficulty = GameDifficulty.values[selectedDifficulty - 1];
-    
+    _startNewGameWithDifficulty(difficulty);
+  }
+  
+  void _startNewGameWithDifficulty(GameDifficulty difficulty) async {
     // 保存游戏状态
     setState(() {
       hasOngoingGame = true;
@@ -45,12 +48,16 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
     
-    // 如果游戏完成，清除保存的游戏状态
+    // 处理游戏结束的返回值
     if (result == 'completed') {
+      // 游戏完成，清除保存的游戏状态
       setState(() {
         hasOngoingGame = false;
         savedGameDifficulty = null;
       });
+    } else if (result == 'restart') {
+      // 用户选择再来一局，立即开始同难度的新游戏
+      _startNewGameWithDifficulty(difficulty);
     }
   }
 
@@ -75,12 +82,26 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
       
-      // 如果游戏完成，清除保存的游戏状态
+      // 处理游戏结束的返回值
       if (result == 'completed') {
+        // 游戏完成，清除保存的游戏状态
         setState(() {
           hasOngoingGame = false;
           savedGameDifficulty = null;
         });
+      } else if (result == 'restart') {
+        // 用户选择再来一局，清除当前游戏并开始同难度的新游戏
+        SudokuService.clearSavedGame();
+        // 找到对应的难度
+        final difficulty = GameDifficulty.values.firstWhere(
+          (d) => d.displayName == savedGameDifficulty,
+          orElse: () => GameDifficulty.level1,
+        );
+        setState(() {
+          hasOngoingGame = false;
+          savedGameDifficulty = null;
+        });
+        _startNewGameWithDifficulty(difficulty);
       }
     }
   }

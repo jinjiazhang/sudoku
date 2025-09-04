@@ -3,7 +3,6 @@ class SudokuGame {
   final List<List<bool>> isFixed;
   final String difficulty;
   final int gridSize;
-  final int mistakes;
   final int secondsElapsed;
   final bool isCompleted;
   final DateTime startTime;
@@ -15,7 +14,6 @@ class SudokuGame {
     required this.isFixed,
     required this.difficulty,
     required this.gridSize,
-    this.mistakes = 0,
     this.secondsElapsed = 0,
     this.isCompleted = false,
     DateTime? startTime,
@@ -28,7 +26,6 @@ class SudokuGame {
     List<List<bool>>? isFixed,
     String? difficulty,
     int? gridSize,
-    int? mistakes,
     int? secondsElapsed,
     bool? isCompleted,
     DateTime? startTime,
@@ -40,7 +37,6 @@ class SudokuGame {
       isFixed: isFixed ?? this.isFixed.map((row) => row.toList()).toList(),
       difficulty: difficulty ?? this.difficulty,
       gridSize: gridSize ?? this.gridSize,
-      mistakes: mistakes ?? this.mistakes,
       secondsElapsed: secondsElapsed ?? this.secondsElapsed,
       isCompleted: isCompleted ?? this.isCompleted,
       startTime: startTime ?? this.startTime,
@@ -55,7 +51,6 @@ class SudokuGame {
       'isFixed': isFixed,
       'difficulty': difficulty,
       'gridSize': gridSize,
-      'mistakes': mistakes,
       'secondsElapsed': secondsElapsed,
       'isCompleted': isCompleted,
       'startTime': startTime.toIso8601String(),
@@ -74,7 +69,6 @@ class SudokuGame {
       ),
       difficulty: json['difficulty'],
       gridSize: json['gridSize'] ?? 9,
-      mistakes: json['mistakes'] ?? 0,
       secondsElapsed: json['secondsElapsed'] ?? 0,
       isCompleted: json['isCompleted'] ?? false,
       startTime: DateTime.parse(json['startTime']),

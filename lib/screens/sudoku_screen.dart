@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../models/sudoku_game.dart';
 import '../services/sudoku_service.dart';
+import '../dialogs/complete_dialog.dart';
 
 class SudokuScreen extends StatefulWidget {
   final String difficulty;
@@ -154,26 +155,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
   }
 
   void _showGameCompleteDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('恭喜！'),
-          content: Text(
-            '游戏完成！\n用时: ${_sudokuService.formatTime(_game.secondsElapsed)}',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop('completed'); // 返回主界面，标记游戏完成
-              },
-              child: const Text('返回主页'),
-            ),
-          ],
-        );
-      },
-    );
+    GameCompleteDialog.show(context, _game);
   }
 
   @override
