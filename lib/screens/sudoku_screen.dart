@@ -149,7 +149,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
         return AlertDialog(
           title: const Text('恭喜！'),
           content: Text(
-            '游戏完成！\n用时: ${_sudokuService.formatTime(_game.secondsElapsed)}\n错误: ${_game.mistakes}次',
+            '游戏完成！\n用时: ${_sudokuService.formatTime(_game.secondsElapsed)}',
           ),
           actions: [
             TextButton(
@@ -176,14 +176,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          _game.score.toString(),
-          style: const TextStyle(
-            color: Colors.black87,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: null,
         centerTitle: true,
         actions: [
           IconButton(
@@ -223,25 +216,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
                       ),
                     ],
                   ),
-                  Column(
-                    children: [
-                      const Text(
-                        '错误',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 10,
-                        ),
-                      ),
-                      Text(
-                        '${_game.mistakes}/3',
-                        style: const TextStyle(
-                          color: Colors.black87,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
+// 错误计数已移除
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
@@ -549,12 +524,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
       return Colors.black;
     }
     
-    // 如果数字有错误，显示红色
-    if (_sudokuService.isNumberIncorrect(_game, row, col)) {
-      return Colors.red;
-    }
-    
-    // 用户输入的正确数字显示蓝色
+    // 用户输入的数字显示蓝色
     return Colors.blue;
   }
   
@@ -563,8 +533,12 @@ class _SudokuScreenState extends State<SudokuScreen> {
     bool isSelected = row == selectedRow && col == selectedCol;
     bool isHighlighted = _isHighlightedCell(row, col);
     bool isSameNumber = _isSameNumberCell(row, col);
+    bool hasConflict = _sudokuService.hasConflict(_game, row, col);
     
-    if (isSelected) {
+    // 如果有冲突，显示浅红色背景（最高优先级）
+    if (hasConflict) {
+      return const Color(0xFFFFE5E5);  // 浅红色背景
+    } else if (isSelected) {
       return const Color(0xFFBBDEFB);  // 当前选中单元格的浅蓝色
     } else if (isSameNumber) {
       return const Color(0xFF81C4E7);  // 相同数字的中等蓝色背景，匹配截图

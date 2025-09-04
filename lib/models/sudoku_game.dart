@@ -4,7 +4,6 @@ class SudokuGame {
   final String difficulty;
   final int gridSize;
   final int mistakes;
-  final int score;
   final int secondsElapsed;
   final bool isCompleted;
   final DateTime startTime;
@@ -15,7 +14,6 @@ class SudokuGame {
     required this.difficulty,
     required this.gridSize,
     this.mistakes = 0,
-    this.score = 0,
     this.secondsElapsed = 0,
     this.isCompleted = false,
     DateTime? startTime,
@@ -27,7 +25,6 @@ class SudokuGame {
     String? difficulty,
     int? gridSize,
     int? mistakes,
-    int? score,
     int? secondsElapsed,
     bool? isCompleted,
     DateTime? startTime,
@@ -38,7 +35,6 @@ class SudokuGame {
       difficulty: difficulty ?? this.difficulty,
       gridSize: gridSize ?? this.gridSize,
       mistakes: mistakes ?? this.mistakes,
-      score: score ?? this.score,
       secondsElapsed: secondsElapsed ?? this.secondsElapsed,
       isCompleted: isCompleted ?? this.isCompleted,
       startTime: startTime ?? this.startTime,
@@ -52,7 +48,6 @@ class SudokuGame {
       'difficulty': difficulty,
       'gridSize': gridSize,
       'mistakes': mistakes,
-      'score': score,
       'secondsElapsed': secondsElapsed,
       'isCompleted': isCompleted,
       'startTime': startTime.toIso8601String(),
@@ -70,7 +65,6 @@ class SudokuGame {
       difficulty: json['difficulty'],
       gridSize: json['gridSize'] ?? 9,
       mistakes: json['mistakes'] ?? 0,
-      score: json['score'] ?? 0,
       secondsElapsed: json['secondsElapsed'] ?? 0,
       isCompleted: json['isCompleted'] ?? false,
       startTime: DateTime.parse(json['startTime']),
