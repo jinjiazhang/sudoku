@@ -42,10 +42,18 @@ class _SudokuScreenState extends State<SudokuScreen> {
   }
 
   void _initializeGame() {
-    _game = _sudokuService.createSampleGame(
-      widget.difficulty,
-      isResuming: widget.isResuming,
-    );
+    // 根据难度名称获取对应的GameDifficulty枚举
+    GameDifficulty? difficulty = _getDifficultyFromName(widget.difficulty);
+    if (difficulty != null) {
+      _game = _sudokuService.createNewGame(difficulty);
+      // 如果是恢复游戏，设置已用时间
+      if (widget.isResuming) {
+        _game = _game.copyWith(secondsElapsed: 35);
+      }
+    } else {
+      // 如果找不到对应难度，使用Level 1作为默认值
+      _game = _sudokuService.createNewGame(GameDifficulty.level1);
+    }
   }
 
   void _startTimer() {
@@ -251,59 +259,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: 16),
                 child: AspectRatio(
                   aspectRatio: 1.0,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black, width: 2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: GridView.builder(
-                      padding: EdgeInsets.zero,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 9,
-                        childAspectRatio: 1.0,
-                      ),
-                      itemCount: 81,
-                      itemBuilder: (context, index) {
-                        int row = index ~/ 9;
-                        int col = index % 9;
-                        bool isSelected = row == selectedRow && col == selectedCol;
-                        bool isHighlighted = row == selectedRow || col == selectedCol ||
-                            (row ~/ 3 == selectedRow ~/ 3 && col ~/ 3 == selectedCol ~/ 3);
-                        
-                        return GestureDetector(
-                          onTap: () => _selectCell(row, col),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: isSelected 
-                                  ? Colors.blue[100]
-                                  : isHighlighted 
-                                      ? Colors.blue[50] 
-                                      : Colors.white,
-                              border: Border.all(
-                                color: Colors.grey[400]!,
-                                width: 0.5,
-                              ),
-                            ),
-                            child: Center(
-                              child: _game.board[row][col] != 0
-                                  ? Text(
-                                      _game.board[row][col].toString(),
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: _game.isFixed[row][col] 
-                                            ? Colors.black 
-                                            : Colors.blue,
-                                      ),
-                                    )
-                                  : null,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                  child: _buildSudokuGrid(),
                 ),
               ),
             ),
@@ -344,37 +300,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
             // 数字输入键盘
             Container(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(9, (index) {
-                  int number = index + 1;
-                  return GestureDetector(
-                    onTap: () => _inputNumber(number),
-                    child: Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: selectedNumber == number 
-                            ? Colors.blue 
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Center(
-                        child: Text(
-                          number.toString(),
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: selectedNumber == number 
-                                ? Colors.white 
-                                : Colors.blue,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ),
+              child: _buildNumberKeyboard(),
             ),
           ],
         ),
@@ -449,5 +375,429 @@ class _SudokuScreenState extends State<SudokuScreen> {
         ],
       ),
     );
+  }
+
+  /// 构建数字键盘，根据游戏难度显示不同数量的数字
+  Widget _buildNumberKeyboard() {
+    GameDifficulty? difficulty = _getDifficultyFromName(_game.difficulty);
+    int numberRange = difficulty?.numberRange ?? 9;
+    
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: List.generate(numberRange, (index) {
+        int number = index + 1;
+        return GestureDetector(
+          onTap: () => _inputNumber(number),
+          child: Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: selectedNumber == number 
+                  ? Colors.blue 
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Center(
+              child: Text(
+                number.toString(),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: selectedNumber == number 
+                      ? Colors.white 
+                      : Colors.blue,
+                ),
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
+  /// 从难度名称获取难度枚举
+  GameDifficulty? _getDifficultyFromName(String difficultyName) {
+    for (GameDifficulty difficulty in GameDifficulty.values) {
+      if (difficulty.displayName == difficultyName) {
+        return difficulty;
+      }
+    }
+    return null;
+  }
+
+  /// 判断单元格是否需要高亮显示
+  bool _isHighlightedCell(int row, int col) {
+    if (selectedRow == -1 || selectedCol == -1) return false;
+    
+    // 高亮同行、同列的单元格
+    if (row == selectedRow || col == selectedCol) return true;
+    
+    // 高亮同子区域的单元格
+    return _isInSameSubRegion(row, col, selectedRow, selectedCol);
+  }
+
+  /// 判断两个单元格是否在同一子区域
+  bool _isInSameSubRegion(int row1, int col1, int row2, int col2) {
+    switch (_game.gridSize) {
+      case 4:
+        // 2x2子区域
+        return (row1 ~/ 2 == row2 ~/ 2) && (col1 ~/ 2 == col2 ~/ 2);
+      case 6:
+        // 2x3子区域（6x6数独有6个2x3子区域，排列为3行2列）
+        return (row1 ~/ 2 == row2 ~/ 2) && (col1 ~/ 3 == col2 ~/ 3);
+      case 9:
+      default:
+        // 3x3子区域
+        return (row1 ~/ 3 == row2 ~/ 3) && (col1 ~/ 3 == col2 ~/ 3);
+    }
+  }
+
+  /// 获取单元格边框颜色
+  Color _getCellBorderColor(int row, int col) {
+    return Colors.grey[400]!; // 所有单元格内部边框都是灰色
+  }
+
+  /// 获取单元格边框宽度  
+  double _getCellBorderWidth(int row, int col) {
+    return 0.5; // 所有单元格内部边框都是细线
+  }
+
+  /// 判断是否是子区域顶部边界
+  bool _isSubRegionTopBoundary(int row) {
+    switch (_game.gridSize) {
+      case 4:
+        return row == 2;
+      case 6:
+        return row == 2 || row == 4;
+      case 9:
+      default:
+        return row == 3 || row == 6;
+    }
+  }
+
+  /// 判断是否是子区域底部边界
+  bool _isSubRegionBottomBoundary(int row) {
+    switch (_game.gridSize) {
+      case 4:
+        return row == 1;
+      case 6:
+        return row == 1 || row == 3;
+      case 9:
+      default:
+        return row == 2 || row == 5;
+    }
+  }
+
+  /// 判断是否是子区域左侧边界
+  bool _isSubRegionLeftBoundary(int col) {
+    switch (_game.gridSize) {
+      case 4:
+        return col == 2;
+      case 6:
+        return col == 3;
+      case 9:
+      default:
+        return col == 3 || col == 6;
+    }
+  }
+
+  /// 判断是否是子区域右侧边界
+  bool _isSubRegionRightBoundary(int col) {
+    switch (_game.gridSize) {
+      case 4:
+        return col == 1;
+      case 6:
+        return col == 2;
+      case 9:
+      default:
+        return col == 2 || col == 5;
+    }
+  }
+
+  /// 获取自适应字体大小
+  double _getCellFontSize() {
+    switch (_game.gridSize) {
+      case 4:
+        return 28.0;  // 4x4网格较大字体
+      case 6:
+        return 22.0;  // 6x6网格中等字体
+      case 9:
+      default:
+        return 16.0;  // 9x9网格较小字体
+    }
+  }
+
+  /// 构建数独网格，包含正确的边框样式
+  Widget _buildSudokuGrid() {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.black, width: 2),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(6),
+        child: _buildSubGridLayout(),
+      ),
+    );
+  }
+
+  /// 构建子网格布局
+  Widget _buildSubGridLayout() {
+    if (_game.gridSize == 6) {
+      return _build6x6Grid();
+    }
+    
+    int subGridSize = _getSubGridSize();
+    int subGridCount = _game.gridSize ~/ subGridSize;
+
+    return Column(
+      children: List.generate(subGridCount, (subGridRow) {
+        return Expanded(
+          child: Row(
+            children: List.generate(subGridCount, (subGridCol) {
+              return Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      right: subGridCol < subGridCount - 1 
+                          ? const BorderSide(color: Colors.black, width: 2)
+                          : BorderSide.none,
+                      bottom: subGridRow < subGridCount - 1
+                          ? const BorderSide(color: Colors.black, width: 2)
+                          : BorderSide.none,
+                    ),
+                  ),
+                  child: _buildSubGrid(subGridRow, subGridCol),
+                ),
+              );
+            }),
+          ),
+        );
+      }),
+    );
+  }
+
+  /// 专门为6x6网格构建布局（3行2列的2x3子网格）
+  Widget _build6x6Grid() {
+    return Column(
+      children: [
+        // 第1行：2个子网格
+        Expanded(
+          child: Row(
+            children: [
+              // 左上子网格 (2x3)
+              Expanded(
+                flex: 3,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      right: BorderSide(color: Colors.black, width: 2),
+                      bottom: BorderSide(color: Colors.black, width: 2),
+                    ),
+                  ),
+                  child: _build2x3SubGrid(0, 0),
+                ),
+              ),
+              // 右上子网格 (2x3)
+              Expanded(
+                flex: 3,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: Colors.black, width: 2),
+                    ),
+                  ),
+                  child: _build2x3SubGrid(0, 1),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // 第2行：2个子网格
+        Expanded(
+          child: Row(
+            children: [
+              // 左中子网格 (2x3)
+              Expanded(
+                flex: 3,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      right: BorderSide(color: Colors.black, width: 2),
+                      bottom: BorderSide(color: Colors.black, width: 2),
+                    ),
+                  ),
+                  child: _build2x3SubGrid(1, 0),
+                ),
+              ),
+              // 右中子网格 (2x3)
+              Expanded(
+                flex: 3,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: Colors.black, width: 2),
+                    ),
+                  ),
+                  child: _build2x3SubGrid(1, 1),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // 第3行：2个子网格
+        Expanded(
+          child: Row(
+            children: [
+              // 左下子网格 (2x3)
+              Expanded(
+                flex: 3,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      right: BorderSide(color: Colors.black, width: 2),
+                    ),
+                  ),
+                  child: _build2x3SubGrid(2, 0),
+                ),
+              ),
+              // 右下子网格 (2x3)
+              Expanded(
+                flex: 3,
+                child: _build2x3SubGrid(2, 1),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 构建2x3子网格
+  Widget _build2x3SubGrid(int subGridRow, int subGridCol) {
+    return GridView.builder(
+      padding: EdgeInsets.zero,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        childAspectRatio: 1.0,
+      ),
+      itemCount: 6, // 2x3 = 6个单元格
+      itemBuilder: (context, index) {
+        int localRow = index ~/ 3;
+        int localCol = index % 3;
+        
+        int globalRow = subGridRow * 2 + localRow;
+        int globalCol = subGridCol * 3 + localCol;
+        
+        bool isSelected = globalRow == selectedRow && globalCol == selectedCol;
+        bool isHighlighted = _isHighlightedCell(globalRow, globalCol);
+        
+        return GestureDetector(
+          onTap: () => _selectCell(globalRow, globalCol),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isSelected 
+                  ? const Color(0xFFBBDEFB)
+                  : isHighlighted 
+                      ? Colors.blue[50] 
+                      : Colors.white,
+              border: Border(
+                right: localCol < 2
+                    ? BorderSide(color: Colors.grey[400]!, width: 0.5)
+                    : BorderSide.none,
+                bottom: localRow < 1
+                    ? BorderSide(color: Colors.grey[400]!, width: 0.5)
+                    : BorderSide.none,
+              ),
+            ),
+            child: Center(
+              child: _game.board[globalRow][globalCol] != 0
+                  ? Text(
+                      _game.board[globalRow][globalCol].toString(),
+                      style: TextStyle(
+                        fontSize: _getCellFontSize(),
+                        fontWeight: FontWeight.bold,
+                        color: _game.isFixed[globalRow][globalCol] 
+                            ? Colors.black 
+                            : Colors.blue,
+                      ),
+                    )
+                  : null,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 构建单个子网格
+  Widget _buildSubGrid(int subGridRow, int subGridCol) {
+    int subGridSize = _getSubGridSize();
+    
+    return GridView.builder(
+      padding: EdgeInsets.zero,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: subGridSize,
+        childAspectRatio: 1.0,
+      ),
+      itemCount: subGridSize * subGridSize,
+      itemBuilder: (context, index) {
+        int localRow = index ~/ subGridSize;
+        int localCol = index % subGridSize;
+        
+        int globalRow = subGridRow * subGridSize + localRow;
+        int globalCol = subGridCol * subGridSize + localCol;
+        
+        bool isSelected = globalRow == selectedRow && globalCol == selectedCol;
+        bool isHighlighted = _isHighlightedCell(globalRow, globalCol);
+        
+        return GestureDetector(
+          onTap: () => _selectCell(globalRow, globalCol),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isSelected 
+                  ? const Color(0xFFBBDEFB) // 浅蓝色，匹配参考图
+                  : isHighlighted 
+                      ? Colors.blue[50] 
+                      : Colors.white,
+              border: Border(
+                right: localCol < subGridSize - 1
+                    ? BorderSide(color: Colors.grey[400]!, width: 0.5)
+                    : BorderSide.none,
+                bottom: localRow < subGridSize - 1
+                    ? BorderSide(color: Colors.grey[400]!, width: 0.5)
+                    : BorderSide.none,
+              ),
+            ),
+            child: Center(
+              child: _game.board[globalRow][globalCol] != 0
+                  ? Text(
+                      _game.board[globalRow][globalCol].toString(),
+                      style: TextStyle(
+                        fontSize: _getCellFontSize(),
+                        fontWeight: FontWeight.bold,
+                        color: _game.isFixed[globalRow][globalCol] 
+                            ? Colors.black 
+                            : Colors.blue,
+                      ),
+                    )
+                  : null,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 获取子网格大小
+  int _getSubGridSize() {
+    switch (_game.gridSize) {
+      case 4: return 2;  // 4x4 使用 2x2 子网格
+      case 6: return 2;  // 6x6 使用 2x3 子网格（需要特殊处理）
+      case 9: return 3;  // 9x9 使用 3x3 子网格
+      default: return 3;
+    }
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../dialogs/difficulty_dialog.dart';
+import '../models/sudoku_game.dart';
+import '../services/sudoku_service.dart';
 import 'sudoku_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -28,13 +30,28 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
 
-    if (difficulty != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SudokuScreen(difficulty: difficulty),
-        ),
-      );
+    if (difficulty != null && mounted) {
+      // 创建新游戏
+      final sudokuService = SudokuService();
+      GameDifficulty? gameDifficulty;
+      
+      // 找到对应的难度枚举
+      for (GameDifficulty d in GameDifficulty.values) {
+        if (d.displayName == difficulty) {
+          gameDifficulty = d;
+          break;
+        }
+      }
+      
+      if (gameDifficulty != null) {
+        final newGame = sudokuService.createNewGame(gameDifficulty);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SudokuScreen(difficulty: difficulty),
+          ),
+        );
+      }
     }
   }
 

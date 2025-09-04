@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/sudoku_game.dart';
 
 class DifficultyDialog extends StatelessWidget {
   const DifficultyDialog({super.key});
@@ -15,42 +16,29 @@ class DifficultyDialog extends StatelessWidget {
         ),
         textAlign: TextAlign.center,
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 16),
-          _buildDifficultyButton(
-            context: context,
-            difficulty: '入门',
-            description: '非常简单，适合初学者',
-            color: Colors.green,
-            onTap: () => Navigator.of(context).pop('入门'),
-          ),
-          const SizedBox(height: 12),
-          _buildDifficultyButton(
-            context: context,
-            difficulty: '简单',
-            description: '轻松解决，适合练习',
-            color: Colors.blue,
-            onTap: () => Navigator.of(context).pop('简单'),
-          ),
-          const SizedBox(height: 12),
-          _buildDifficultyButton(
-            context: context,
-            difficulty: '中等',
-            description: '需要一些技巧和耐心',
-            color: Colors.orange,
-            onTap: () => Navigator.of(context).pop('中等'),
-          ),
-          const SizedBox(height: 12),
-          _buildDifficultyButton(
-            context: context,
-            difficulty: '困难',
-            description: '挑战你的极限',
-            color: Colors.red,
-            onTap: () => Navigator.of(context).pop('困难'),
-          ),
-        ],
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 16),
+            // 使用网格显示9个难度等级
+            GridView.count(
+              shrinkWrap: true,
+              crossAxisCount: 3,
+              childAspectRatio: 1.2,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              children: GameDifficulty.values.map((difficulty) {
+                return _buildDifficultyButton(
+                  context: context,
+                  difficulty: difficulty,
+                  onTap: () => Navigator.of(context).pop(difficulty.displayName),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(
@@ -73,44 +61,44 @@ class DifficultyDialog extends StatelessWidget {
 
   Widget _buildDifficultyButton({
     required BuildContext context,
-    required String difficulty,
-    required String description,
-    required Color color,
+    required GameDifficulty difficulty,
     required VoidCallback onTap,
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           border: Border.all(
-            color: color.withOpacity(0.3),
+            color: difficulty.color.withOpacity(0.3),
             width: 1.5,
           ),
-          borderRadius: BorderRadius.circular(12),
-          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          color: difficulty.color.withOpacity(0.1),
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
-              difficulty,
+              difficulty.displayName,
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: color,
+                color: difficulty.color,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
-              description,
+              difficulty.description,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 9,
                 color: Colors.grey[600],
               ),
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
