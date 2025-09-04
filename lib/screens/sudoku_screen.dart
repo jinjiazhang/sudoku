@@ -188,7 +188,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   // 难度显示
                   RichText(
@@ -198,40 +198,43 @@ class _SudokuScreenState extends State<SudokuScreen> {
                           text: '难度: ',
                           style: TextStyle(
                             color: Colors.grey,
-                            fontSize: 14,
+                            fontSize: 20,
                           ),
                         ),
                         TextSpan(
                           text: _game.difficulty,
                           style: const TextStyle(
                             color: Colors.black87,
-                            fontSize: 14,
+                            fontSize: 20,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  // 时间显示
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        const TextSpan(
-                          text: '时间: ',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 14,
+                  // 时间显示 - 固定宽度防止位置跳动
+                  SizedBox(
+                    width: 120,
+                    child: RichText(
+                      text: TextSpan(
+                        children: [
+                          const TextSpan(
+                            text: '时间: ',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 20,
+                            ),
                           ),
-                        ),
-                        TextSpan(
-                          text: _sudokuService.formatTime(_game.secondsElapsed),
-                          style: const TextStyle(
-                            color: Colors.black87,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                          TextSpan(
+                            text: _sudokuService.formatTime(_game.secondsElapsed),
+                            style: const TextStyle(
+                              color: Colors.black87,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -244,49 +247,43 @@ class _SudokuScreenState extends State<SudokuScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: 16),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    // 为工具栏和数字键盘预留空间
-                    double reservedSpace = 150;
+                    // 为工具栏和数字键盘预留最少空间，让棋盘尽可能大
+                    double reservedSpace = 80;
                     double availableHeight = constraints.maxHeight - reservedSpace;
                     
                     // 确保availableHeight不会为负数
-                    if (availableHeight < 100) {
-                      availableHeight = 100;
+                    if (availableHeight < 200) {
+                      availableHeight = 200;
                     }
                     
-                    // 计算棋盘的实际尺寸，确保不会挤占下方控件空间
-                    double availableSize = constraints.maxWidth < availableHeight 
-                        ? constraints.maxWidth 
-                        : availableHeight;
+                    // 让棋盘占用更大比例的空间
+                    double availableSize = constraints.maxWidth * 0.92;
                     
-                    // 基于棋盘占屏幕比例计算间距 - 棋盘越小间距越小
-                    double boardRatio = availableSize / constraints.maxHeight;
-                    double dynamicSpacing = boardRatio > 0.7 ? 8.0 : (boardRatio > 0.5 ? 12.0 : 16.0);
-                    double smallSpacing = boardRatio > 0.7 ? 4.0 : (boardRatio > 0.5 ? 6.0 : 8.0);
+                    // 调整间距
+                    double dynamicSpacing = 24.0;
+                    double smallSpacing = 18.0;
                     
                     return Column(
                       children: [
-                        // 棋盘区域 - 使用 Flexible 而不是固定尺寸
-                        Flexible(
-                          child: Center(
-                            child: SizedBox(
-                              width: availableSize,
-                              height: availableSize,
-                              child: _buildSudokuGrid(),
-                            ),
+                        // 棋盘区域 - 居中显示，固定大小
+                        Center(
+                          child: SizedBox(
+                            width: availableSize,
+                            height: availableSize,
+                            child: _buildSudokuGrid(),
                           ),
                         ),
                         
                         // 动态间距 - 屏幕窄时自动减小
                         SizedBox(height: dynamicSpacing),
                         
-                        // 工具栏 - 宽度不超过棋盘
-                        SizedBox(
+                        // 工具栏 - 紧凑布局
+                        Container(
                           width: availableSize,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20, 
-                              vertical: 8
-                            ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16, 
+                            vertical: 12
+                          ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
@@ -316,19 +313,16 @@ class _SudokuScreenState extends State<SudokuScreen> {
                                 ),
                               ],
                             ),
-                          ),
                         ),
                         
                         // 工具栏和键盘动态间距
                         SizedBox(height: smallSpacing),
                         
-                        // 数字输入键盘 - 宽度不超过棋盘
-                        SizedBox(
+                        // 数字输入键盘 - 居中紧凑布局
+                        Container(
                           width: availableSize,
-                          child: Container(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                            child: _buildNumberKeyboard(),
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          child: _buildNumberKeyboard(),
                         ),
                       ],
                     );
@@ -363,7 +357,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
             Stack(
               children: [
                 CircleAvatar(
-                  radius: 20,
+                  radius: 22,
                   backgroundColor: isDisabled ? Colors.grey[300] : Colors.grey[200],
                   child: isActive && activeText != null
                       ? Text(
@@ -377,7 +371,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
                       : Icon(
                           icon,
                           color: isDisabled ? Colors.grey[400] : Colors.grey[600],
-                          size: 20,
+                          size: 24,
                         ),
                 ),
               if (badgeCount != null && badgeCount > 0)
@@ -407,7 +401,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
               label,
               style: TextStyle(
                 color: isDisabled ? Colors.grey[400] : Colors.grey[600],
-                fontSize: 10,
+                fontSize: 12,
               ),
             ),
           ],
@@ -426,22 +420,24 @@ class _SudokuScreenState extends State<SudokuScreen> {
       children: List.generate(numberRange, (index) {
         int number = index + 1;
         
-        return GestureDetector(
-          onTap: () => _inputNumber(number),
-          child: Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Center(
-              child: Text(
-                number.toString(),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+        return Expanded(
+          child: GestureDetector(
+            onTap: () => _inputNumber(number),
+            child: Container(
+              height: 45,
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Center(
+                child: Text(
+                  number.toString(),
+                  style: const TextStyle(
+                    fontSize: 38,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
                 ),
               ),
             ),
@@ -511,12 +507,12 @@ class _SudokuScreenState extends State<SudokuScreen> {
   double _getCellFontSize() {
     switch (_game.gridSize) {
       case 4:
-        return 28.0;  // 4x4网格较大字体
+        return 36.0;  // 4x4网格较大字体
       case 6:
-        return 22.0;  // 6x6网格中等字体
+        return 28.0;  // 6x6网格中等字体
       case 9:
       default:
-        return 16.0;  // 9x9网格较小字体
+        return 22.0;  // 9x9网格较小字体
     }
   }
   
