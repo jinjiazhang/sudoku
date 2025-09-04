@@ -24,6 +24,7 @@ migrate_working_dir/
 .vscode/
 .claude/
 *.png
+*.jpg
 
 # Flutter/Dart/Pub related
 **/doc/api/
