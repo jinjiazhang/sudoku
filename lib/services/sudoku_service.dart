@@ -1,8 +1,10 @@
 import '../models/sudoku_game.dart';
 import 'dart:math';
+import 'dart:convert';
 
 class SudokuService {
   final Random _random = Random();
+  static SudokuGame? _savedGame;
 
   /// 创建新的数独游戏
   SudokuGame createNewGame(GameDifficulty difficulty) {
@@ -188,6 +190,26 @@ class SudokuService {
     int minutes = seconds ~/ 60;
     int remainingSeconds = seconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
+  /// 保存游戏状态
+  static void saveGame(SudokuGame game) {
+    _savedGame = game;
+  }
+
+  /// 获取保存的游戏
+  static SudokuGame? getSavedGame() {
+    return _savedGame;
+  }
+
+  /// 清除保存的游戏
+  static void clearSavedGame() {
+    _savedGame = null;
+  }
+
+  /// 检查是否有保存的游戏
+  static bool hasSavedGame() {
+    return _savedGame != null;
   }
 
   /// 生成分级数独棋盘

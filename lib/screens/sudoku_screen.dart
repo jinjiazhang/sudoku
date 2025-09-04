@@ -42,24 +42,34 @@ class _SudokuScreenState extends State<SudokuScreen> {
   }
 
   void _initializeGame() {
-    // 根据难度名称获取对应的GameDifficulty枚举
+    if (widget.isResuming) {
+      // 尝试加载保存的游戏
+      final savedGame = SudokuService.getSavedGame();
+      if (savedGame != null) {
+        _game = savedGame;
+        return;
+      }
+    }
+    
+    // 创建新游戏
     GameDifficulty? difficulty = _getDifficultyFromName(widget.difficulty);
     if (difficulty != null) {
       _game = _sudokuService.createNewGame(difficulty);
-      // 如果是恢复游戏，设置已用时间
-      if (widget.isResuming) {
-        _game = _game.copyWith(secondsElapsed: 35);
-      }
     } else {
       // 如果找不到对应难度，使用Level 1作为默认值
       _game = _sudokuService.createNewGame(GameDifficulty.level1);
     }
+    
+    // 保存新创建的游戏
+    SudokuService.saveGame(_game);
   }
 
   void _startTimer() {
     _gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
         _game = _game.copyWith(secondsElapsed: _game.secondsElapsed + 1);
+        // 每秒保存游戏状态
+        SudokuService.saveGame(_game);
       });
     });
   }
@@ -79,9 +89,13 @@ class _SudokuScreenState extends State<SudokuScreen> {
         _game = _sudokuService.placeNumber(_game, selectedRow, selectedCol, number);
         selectedNumber = number;
         
+        // 保存游戏状态
+        SudokuService.saveGame(_game);
+        
         // 检查游戏是否完成
         if (_sudokuService.isGameComplete(_game)) {
           _gameTimer.cancel();
+          SudokuService.clearSavedGame(); // 游戏完成时清除保存
           _showGameCompleteDialog();
         }
       });
@@ -92,6 +106,8 @@ class _SudokuScreenState extends State<SudokuScreen> {
     if (selectedRow != -1 && selectedCol != -1) {
       setState(() {
         _game = _sudokuService.eraseCell(_game, selectedRow, selectedCol);
+        // 保存游戏状态
+        SudokuService.saveGame(_game);
       });
     }
   }
@@ -141,7 +157,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                Navigator.of(context).pop(); // 返回主界面
+                Navigator.of(context).pop('completed'); // 返回主界面，标记游戏完成
               },
               child: const Text('返回主页'),
             ),

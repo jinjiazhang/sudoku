@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/sudoku_game.dart';
+import '../services/sudoku_service.dart';
 import 'sudoku_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -11,44 +12,77 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool hasOngoingGame = false;
-  String ongoingGameDifficulty = '简单';
-  String ongoingGameTime = '00:35';
+  String? savedGameDifficulty;
   int selectedDifficulty = 1; // 默认选择1级难度
 
   @override
   void initState() {
     super.initState();
-    hasOngoingGame = true;
+    // 检查是否有保存的游戏
+    hasOngoingGame = SudokuService.hasSavedGame();
+    if (hasOngoingGame) {
+      final savedGame = SudokuService.getSavedGame();
+      if (savedGame != null) {
+        savedGameDifficulty = savedGame.difficulty;
+      }
+    }
   }
 
-  void _startNewGame() {
+  void _startNewGame() async {
     // 根据滑动条的值获取对应的难度
     GameDifficulty difficulty = GameDifficulty.values[selectedDifficulty - 1];
     
-    Navigator.push(
+    // 保存游戏状态
+    setState(() {
+      hasOngoingGame = true;
+      savedGameDifficulty = difficulty.displayName;
+    });
+    
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => SudokuScreen(difficulty: difficulty.displayName),
       ),
     );
+    
+    // 如果游戏完成，清除保存的游戏状态
+    if (result == 'completed') {
+      setState(() {
+        hasOngoingGame = false;
+        savedGameDifficulty = null;
+      });
+    }
   }
 
   void _restartGame() {
     setState(() {
       hasOngoingGame = false; // 清除当前游戏状态，显示难度选择界面
+      savedGameDifficulty = null;
     });
+    // 清除保存的游戏
+    SudokuService.clearSavedGame();
   }
 
-  void _continueGame() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SudokuScreen(
-          difficulty: ongoingGameDifficulty,
-          isResuming: true,
+  void _continueGame() async {
+    if (savedGameDifficulty != null) {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SudokuScreen(
+            difficulty: savedGameDifficulty!,
+            isResuming: true,
+          ),
         ),
-      ),
-    );
+      );
+      
+      // 如果游戏完成，清除保存的游戏状态
+      if (result == 'completed') {
+        setState(() {
+          hasOngoingGame = false;
+          savedGameDifficulty = null;
+        });
+      }
+    }
   }
 
   @override
