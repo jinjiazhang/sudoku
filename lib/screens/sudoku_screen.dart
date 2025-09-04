@@ -244,11 +244,11 @@ class _SudokuScreenState extends State<SudokuScreen> {
             // 使用统一的LayoutBuilder计算棋盘尺寸并限制控件宽度
             Expanded(
               child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
+                margin: const EdgeInsets.symmetric(horizontal: 10),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    // 为工具栏和数字键盘预留最少空间，让棋盘尽可能大
-                    double reservedSpace = 80;
+                    // 棋盘绝对最大化，压缩所有其他空间
+                    double reservedSpace = 20; // 极小化预留空间
                     double availableHeight = constraints.maxHeight - reservedSpace;
                     
                     // 确保availableHeight不会为负数
@@ -256,12 +256,12 @@ class _SudokuScreenState extends State<SudokuScreen> {
                       availableHeight = 200;
                     }
                     
-                    // 让棋盘占用更大比例的空间
-                    double availableSize = constraints.maxWidth * 0.92;
+                    // 棋盘占满整个屏幕宽度
+                    double availableSize = constraints.maxWidth; // 100%宽度
                     
-                    // 调整间距
-                    double dynamicSpacing = 30.0;
-                    double smallSpacing = 24.0;
+                    // 极小化间距让棋盘绝对最大
+                    double dynamicSpacing = 30.0;  // 极小化棋盘与按钮间距
+                    double smallSpacing = 24.0;    // 极小化按钮与数字键盘间距
                     
                     return Column(
                       children: [
