@@ -210,6 +210,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
                     double smallSpacing = 12.0;
                     
                     return Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         // 棋盘区域和时间显示 - 确保居中
                         Center(
@@ -307,10 +308,13 @@ class _SudokuScreenState extends State<SudokuScreen> {
                         SizedBox(height: smallSpacing),
                         
                         // 数字输入键盘 - 居中紧凑布局
-                        Container(
-                          width: availableSize,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          child: _buildNumberKeyboard(),
+                        Flexible(
+                          child: Container(
+                            width: availableSize,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            margin: const EdgeInsets.only(bottom: 20),
+                            child: _buildNumberKeyboard(),
+                          ),
                         ),
                       ],
                     );
@@ -412,7 +416,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
           child: GestureDetector(
             onTap: () => _inputNumber(number),
             child: Container(
-              height: 45,
+              height: 55,
               margin: const EdgeInsets.symmetric(horizontal: 2),
               decoration: BoxDecoration(
                 color: Colors.transparent,
@@ -421,11 +425,13 @@ class _SudokuScreenState extends State<SudokuScreen> {
               child: Center(
                 child: Text(
                   number.toString(),
+                  textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 40,
                     fontWeight: FontWeight.w300,
                     color: Colors.blue,
                     fontFamily: 'SF Pro Display',
+                    height: 1.0,
                   ),
                 ),
               ),
