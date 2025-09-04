@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../dialogs/difficulty_dialog.dart';
 import '../models/sudoku_game.dart';
-import '../services/sudoku_service.dart';
 import 'sudoku_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -31,11 +30,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (difficulty != null && mounted) {
-      // 创建新游戏
-      final sudokuService = SudokuService();
-      GameDifficulty? gameDifficulty;
-      
       // 找到对应的难度枚举
+      GameDifficulty? gameDifficulty;
       for (GameDifficulty d in GameDifficulty.values) {
         if (d.displayName == difficulty) {
           gameDifficulty = d;
@@ -44,7 +40,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       
       if (gameDifficulty != null) {
-        final newGame = sudokuService.createNewGame(gameDifficulty);
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -126,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         // TODO: 实现每日挑战
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white.withOpacity(0.2),
+                        backgroundColor: Colors.white.withValues(alpha: 0.2),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 32,
@@ -207,7 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               
-              Container(
+              SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _startNewGame,

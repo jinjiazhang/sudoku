@@ -80,35 +80,6 @@ class SudokuGame {
   }
 }
 
-class SudokuCell {
-  final int row;
-  final int col;
-  final int value;
-  final bool isFixed;
-  final List<int> notes;
-
-  SudokuCell({
-    required this.row,
-    required this.col,
-    this.value = 0,
-    this.isFixed = false,
-    this.notes = const [],
-  });
-
-  SudokuCell copyWith({
-    int? value,
-    bool? isFixed,
-    List<int>? notes,
-  }) {
-    return SudokuCell(
-      row: row,
-      col: col,
-      value: value ?? this.value,
-      isFixed: isFixed ?? this.isFixed,
-      notes: notes ?? List.from(this.notes),
-    );
-  }
-}
 
 enum GameDifficulty {
   level1('1级', 4, 4, 10), // 4x4网格，1-4数字，10个初始数字
@@ -127,15 +98,6 @@ enum GameDifficulty {
   final int numberRange;  // 使用的数字范围 (1到numberRange)
   final int initialClues; // 初始显示的数字个数
   
-  /// 获取子区域大小
-  int get subGridSize {
-    switch (gridSize) {
-      case 4: return 2;  // 4x4网格使用2x2子区域
-      case 6: return 2;  // 6x6网格使用2x3子区域（或3x2，待定）
-      case 9: return 3;  // 9x9网格使用3x3子区域
-      default: return 3;
-    }
-  }
 
   /// 获取描述文本
   String get description {

@@ -16,40 +16,6 @@ class SudokuService {
     );
   }
 
-  /// 加载示例游戏（基于设计图）
-  SudokuGame createSampleGame(String difficulty, {bool isResuming = false}) {
-    List<List<int>> sampleBoard = [
-      [0, 0, 2, 7, 0, 1, 0, 0, 6],
-      [0, 0, 0, 6, 9, 0, 0, 1, 0],
-      [9, 6, 0, 0, 8, 0, 5, 3, 0],
-      [9, 8, 4, 0, 0, 0, 6, 4, 0],
-      [2, 0, 0, 0, 0, 0, 0, 0, 0],
-      [6, 0, 3, 0, 5, 8, 0, 0, 0],
-      [0, 7, 8, 0, 1, 4, 9, 0, 0],
-      [4, 2, 0, 3, 6, 7, 0, 0, 5],
-      [5, 0, 1, 0, 0, 9, 3, 0, 4],
-    ];
-    
-    List<List<bool>> fixedCells = [
-      [false, false, true, true, false, true, false, false, true],
-      [false, false, false, true, true, false, false, true, false],
-      [true, true, false, false, true, false, true, true, false],
-      [true, true, true, false, false, false, true, true, false],
-      [true, false, false, false, false, false, false, false, false],
-      [true, false, true, false, true, true, false, false, false],
-      [false, true, true, false, true, true, true, false, false],
-      [true, true, false, true, true, true, false, false, true],
-      [true, false, true, false, false, true, true, false, true],
-    ];
-    
-    return SudokuGame(
-      board: sampleBoard,
-      isFixed: fixedCells,
-      difficulty: difficulty,
-      gridSize: 9,
-      secondsElapsed: isResuming ? 35 : 0,
-    );
-  }
 
   /// 验证数字是否可以放置在指定位置
   bool isValidMove(SudokuGame game, int row, int col, int number) {
@@ -239,75 +205,162 @@ class SudokuService {
   
   /// 生成1级难度棋盘（4x4网格，1-4数字）
   Map<String, List<List<dynamic>>> _generateLevel1Board() {
-    // 基于你的图片创建一个完整的4x4数独解
-    List<List<int>> completedBoard = [
-      [1, 4, 2, 3],
-      [3, 2, 4, 1], 
-      [4, 1, 3, 2],
-      [2, 3, 1, 4],
-    ];
+    // 生成完整的4x4数独解
+    List<List<int>> completedBoard = _generateComplete4x4Board();
     
-    // 创建游戏棋盘，移除一些数字作为谜题
+    // 创建游戏棋盘
     List<List<int>> board = completedBoard.map((row) => row.toList()).toList();
     
-    // 根据你的图片，保留这些位置的数字
-    List<List<bool>> fixedPositions = [
-      [false, false, false, false],
-      [false, true,  true,  true ],  // 2, 3, 1
-      [false, true,  true,  true ],  // 3, 2, 4  
-      [true,  false, false, true ],  // 2,       3
+    // 随机移除数字，保留10个数字（根据难度设置）
+    int totalCells = 4 * 4;
+    int cluesToRemove = totalCells - GameDifficulty.level1.initialClues;
+    _removeClues(board, 4, cluesToRemove);
+    
+    // 设置固定位置
+    List<List<bool>> isFixed = board.map((row) => 
+      row.map((cell) => cell != 0).toList()
+    ).toList();
+    
+    return {'board': board, 'isFixed': isFixed};
+  }
+
+  /// 生成完整的4x4数独解
+  List<List<int>> _generateComplete4x4Board() {
+    // 创建基础模板
+    List<List<int>> board = [
+      [1, 2, 3, 4],
+      [3, 4, 1, 2],
+      [2, 3, 4, 1],
+      [4, 1, 2, 3],
     ];
     
-    // 根据固定位置设置棋盘
-    for (int row = 0; row < 4; row++) {
-      for (int col = 0; col < 4; col++) {
-        if (!fixedPositions[row][col]) {
-          board[row][col] = 0;
-        }
-      }
+    // 随机变换来创建不同的解
+    _shuffle4x4Board(board);
+    
+    return board;
+  }
+
+  /// 随机变换4x4数独棋盘
+  void _shuffle4x4Board(List<List<int>> board) {
+    // 随机交换行（在同一2行子区域内）
+    if (_random.nextBool()) {
+      _swapRows(board, 0, 1);
+    }
+    if (_random.nextBool()) {
+      _swapRows(board, 2, 3);
     }
     
-    return {'board': board, 'isFixed': fixedPositions};
+    // 随机交换列（在同一2列子区域内）
+    if (_random.nextBool()) {
+      _swapColumns(board, 0, 1);
+    }
+    if (_random.nextBool()) {
+      _swapColumns(board, 2, 3);
+    }
+    
+    // 随机交换2x2子区域行
+    if (_random.nextBool()) {
+      _swapRows(board, 0, 2);
+      _swapRows(board, 1, 3);
+    }
+    
+    // 随机交换2x2子区域列
+    if (_random.nextBool()) {
+      _swapColumns(board, 0, 2);
+      _swapColumns(board, 1, 3);
+    }
+    
+    // 随机重新映射数字
+    _remapNumbers(board, 4);
   }
   
   /// 生成2级难度棋盘（6x6数字，1-6数字）
   Map<String, List<List<dynamic>>> _generateLevel2Board() {
-    // 完全按照2.png图片显示的数独棋盘
+    // 生成完整的6x6数独解
+    List<List<int>> completedBoard = _generateComplete6x6Board();
+    
+    // 创建游戏棋盘
+    List<List<int>> board = completedBoard.map((row) => row.toList()).toList();
+    
+    // 随机移除数字，保留20个数字（根据难度设置）
+    int totalCells = 6 * 6;
+    int cluesToRemove = totalCells - GameDifficulty.level2.initialClues;
+    _removeClues(board, 6, cluesToRemove);
+    
+    // 设置固定位置
+    List<List<bool>> isFixed = board.map((row) => 
+      row.map((cell) => cell != 0).toList()
+    ).toList();
+    
+    return {'board': board, 'isFixed': isFixed};
+  }
+
+  /// 生成完整的6x6数独解
+  List<List<int>> _generateComplete6x6Board() {
+    // 创建基础模板
     List<List<int>> board = [
-      [0, 5, 0, 2, 0, 6],  // 第1行：_, 5, _, 2, _, 6
-      [2, 4, 6, 0, 0, 3],  // 第2行：2, 4, 6, _, _, 3
-      [1, 2, 4, 0, 6, 5],  // 第3行：1, 2, 4, _, 6, 5
-      [5, 6, 0, 4, 2, 1],  // 第4行：5, 6, _, 4, 2, 1
-      [4, 0, 0, 6, 3, 2],  // 第5行：4, _, _, 6, 3, 2
-      [6, 0, 2, 0, 1, 0],  // 第6行：6, _, 2, _, 1, _
+      [1, 2, 3, 4, 5, 6],
+      [4, 5, 6, 1, 2, 3],
+      [2, 3, 1, 6, 4, 5],
+      [5, 6, 4, 2, 3, 1],
+      [3, 1, 2, 5, 6, 4],
+      [6, 4, 5, 3, 1, 2],
     ];
     
-    // 设置固定位置（有数字的位置为固定）
-    List<List<bool>> fixedPositions = [
-      [false, true,  false, true,  false, true ],  // _, 5, _, 2, _, 6
-      [true,  true,  true,  false, false, true ],  // 2, 4, 6, _, _, 3
-      [true,  true,  true,  false, true,  true ],  // 1, 2, 4, _, 6, 5
-      [true,  true,  false, true,  true,  true ],  // 5, 6, _, 4, 2, 1
-      [true,  false, false, true,  true,  true ],  // 4, _, _, 6, 3, 2
-      [true,  false, true,  false, true,  false],  // 6, _, 2, _, 1, _
-    ];
+    // 随机变换来创建不同的解
+    _shuffle6x6Board(board);
     
-    return {'board': board, 'isFixed': fixedPositions};
+    return board;
+  }
+
+  /// 随机变换6x6数独棋盘
+  void _shuffle6x6Board(List<List<int>> board) {
+    // 随机交换行（在同一2行子区域内）
+    for (int subGrid = 0; subGrid < 3; subGrid++) {
+      if (_random.nextBool()) {
+        _swapRows(board, subGrid * 2, subGrid * 2 + 1);
+      }
+    }
+    
+    // 随机交换列（在同一3列子区域内）
+    for (int subGrid = 0; subGrid < 2; subGrid++) {
+      int base = subGrid * 3;
+      if (_random.nextBool()) {
+        _swapColumns(board, base, base + 1);
+      }
+      if (_random.nextBool()) {
+        _swapColumns(board, base + 1, base + 2);
+      }
+    }
+    
+    // 随机交换2x3子区域行组
+    if (_random.nextBool()) {
+      _swapRows(board, 0, 2);
+      _swapRows(board, 1, 3);
+    }
+    if (_random.nextBool()) {
+      _swapRows(board, 2, 4);
+      _swapRows(board, 3, 5);
+    }
+    
+    // 随机交换2x3子区域列组
+    if (_random.nextBool()) {
+      _swapColumns(board, 0, 3);
+      _swapColumns(board, 1, 4);
+      _swapColumns(board, 2, 5);
+    }
+    
+    // 随机重新映射数字
+    _remapNumbers(board, 6);
   }
   
   /// 生成标准数独棋盘（1-9数字）
   Map<String, List<List<dynamic>>> _generateStandardBoard(GameDifficulty difficulty) {
-    List<List<int>> board = [
-      [5, 3, 0, 0, 7, 0, 0, 0, 0],
-      [6, 0, 0, 1, 9, 5, 0, 0, 0],
-      [0, 9, 8, 0, 0, 0, 0, 6, 0],
-      [8, 0, 0, 0, 6, 0, 0, 0, 3],
-      [4, 0, 0, 8, 0, 3, 0, 0, 1],
-      [7, 0, 0, 0, 2, 0, 0, 0, 6],
-      [0, 6, 0, 0, 0, 0, 2, 8, 0],
-      [0, 0, 0, 4, 1, 9, 0, 0, 5],
-      [0, 0, 0, 0, 8, 0, 0, 7, 9],
-    ];
+    // 生成完整的9x9数独解
+    List<List<int>> completedBoard = _generateComplete9x9Board();
+    
+    // 创建游戏棋盘
+    List<List<int>> board = completedBoard.map((row) => row.toList()).toList();
     
     // 根据难度移除不同数量的数字
     int totalCells = 9 * 9;
@@ -319,6 +372,79 @@ class SudokuService {
     ).toList();
     
     return {'board': board, 'isFixed': isFixed};
+  }
+
+  /// 生成完整的9x9数独解
+  List<List<int>> _generateComplete9x9Board() {
+    // 创建基础模板
+    List<List<int>> board = [
+      [1, 2, 3, 4, 5, 6, 7, 8, 9],
+      [4, 5, 6, 7, 8, 9, 1, 2, 3],
+      [7, 8, 9, 1, 2, 3, 4, 5, 6],
+      [2, 3, 1, 5, 6, 4, 8, 9, 7],
+      [5, 6, 4, 8, 9, 7, 2, 3, 1],
+      [8, 9, 7, 2, 3, 1, 5, 6, 4],
+      [3, 1, 2, 6, 4, 5, 9, 7, 8],
+      [6, 4, 5, 9, 7, 8, 3, 1, 2],
+      [9, 7, 8, 3, 1, 2, 6, 4, 5],
+    ];
+    
+    // 随机变换来创建不同的解
+    _shuffle9x9Board(board);
+    
+    return board;
+  }
+
+  /// 随机变换9x9数独棋盘
+  void _shuffle9x9Board(List<List<int>> board) {
+    // 随机交换行（在同一3行子区域内）
+    for (int subGrid = 0; subGrid < 3; subGrid++) {
+      int base = subGrid * 3;
+      if (_random.nextBool()) {
+        _swapRows(board, base, base + 1);
+      }
+      if (_random.nextBool()) {
+        _swapRows(board, base + 1, base + 2);
+      }
+    }
+    
+    // 随机交换列（在同一3列子区域内）
+    for (int subGrid = 0; subGrid < 3; subGrid++) {
+      int base = subGrid * 3;
+      if (_random.nextBool()) {
+        _swapColumns(board, base, base + 1);
+      }
+      if (_random.nextBool()) {
+        _swapColumns(board, base + 1, base + 2);
+      }
+    }
+    
+    // 随机交换3x3子区域行组
+    if (_random.nextBool()) {
+      _swapRows(board, 0, 3);
+      _swapRows(board, 1, 4);
+      _swapRows(board, 2, 5);
+    }
+    if (_random.nextBool()) {
+      _swapRows(board, 3, 6);
+      _swapRows(board, 4, 7);
+      _swapRows(board, 5, 8);
+    }
+    
+    // 随机交换3x3子区域列组
+    if (_random.nextBool()) {
+      _swapColumns(board, 0, 3);
+      _swapColumns(board, 1, 4);
+      _swapColumns(board, 2, 5);
+    }
+    if (_random.nextBool()) {
+      _swapColumns(board, 3, 6);
+      _swapColumns(board, 4, 7);
+      _swapColumns(board, 5, 8);
+    }
+    
+    // 随机重新映射数字
+    _remapNumbers(board, 9);
   }
   
   /// 随机移除棋盘上的数字
@@ -358,34 +484,68 @@ class SudokuService {
     }
 
     // 验证子网格
-    int subGridSize = _getSubGridSize(gridSize);
-    int subGridCount = gridSize;
-    
-    for (int subGrid = 0; subGrid < subGridCount; subGrid++) {
-      List<int> subGridValues = [];
-      int subGridRow = (subGrid ~/ subGridSize) * subGridSize;
-      int subGridCol = (subGrid % subGridSize) * subGridSize;
-      
-      for (int r = subGridRow; r < subGridRow + subGridSize; r++) {
-        for (int c = subGridCol; c < subGridCol + subGridSize; c++) {
-          subGridValues.add(board[r][c]);
-        }
-      }
-      if (!_isValidGroup(subGridValues)) return false;
+    if (gridSize == 4) {
+      // 4x4: 4个2x2子网格
+      return _validate4x4SubGrids(board);
+    } else if (gridSize == 6) {
+      // 6x6: 6个2x3子网格
+      return _validate6x6SubGrids(board);
+    } else if (gridSize == 9) {
+      // 9x9: 9个3x3子网格
+      return _validate9x9SubGrids(board);
     }
 
     return true;
   }
-  
-  /// 获取子网格大小
-  int _getSubGridSize(int gridSize) {
-    switch (gridSize) {
-      case 4: return 2;
-      case 6: return 2; // 6x6使用2x3子网格
-      case 9: return 3;
-      default: return 3;
+
+  /// 验证4x4子网格
+  bool _validate4x4SubGrids(List<List<int>> board) {
+    for (int subRow = 0; subRow < 2; subRow++) {
+      for (int subCol = 0; subCol < 2; subCol++) {
+        List<int> subGridValues = [];
+        for (int r = subRow * 2; r < subRow * 2 + 2; r++) {
+          for (int c = subCol * 2; c < subCol * 2 + 2; c++) {
+            subGridValues.add(board[r][c]);
+          }
+        }
+        if (!_isValidGroup(subGridValues)) return false;
+      }
     }
+    return true;
   }
+
+  /// 验证6x6子网格  
+  bool _validate6x6SubGrids(List<List<int>> board) {
+    for (int subRow = 0; subRow < 3; subRow++) {
+      for (int subCol = 0; subCol < 2; subCol++) {
+        List<int> subGridValues = [];
+        for (int r = subRow * 2; r < subRow * 2 + 2; r++) {
+          for (int c = subCol * 3; c < subCol * 3 + 3; c++) {
+            subGridValues.add(board[r][c]);
+          }
+        }
+        if (!_isValidGroup(subGridValues)) return false;
+      }
+    }
+    return true;
+  }
+
+  /// 验证9x9子网格
+  bool _validate9x9SubGrids(List<List<int>> board) {
+    for (int subRow = 0; subRow < 3; subRow++) {
+      for (int subCol = 0; subCol < 3; subCol++) {
+        List<int> subGridValues = [];
+        for (int r = subRow * 3; r < subRow * 3 + 3; r++) {
+          for (int c = subCol * 3; c < subCol * 3 + 3; c++) {
+            subGridValues.add(board[r][c]);
+          }
+        }
+        if (!_isValidGroup(subGridValues)) return false;
+      }
+    }
+    return true;
+  }
+  
 
   /// 验证一组数字是否有效（1-9各出现一次）
   bool _isValidGroup(List<int> group) {
@@ -397,5 +557,42 @@ class SudokuService {
       }
     }
     return true;
+  }
+
+  /// 交换两行
+  void _swapRows(List<List<int>> board, int row1, int row2) {
+    List<int> temp = board[row1];
+    board[row1] = board[row2];
+    board[row2] = temp;
+  }
+
+  /// 交换两列
+  void _swapColumns(List<List<int>> board, int col1, int col2) {
+    for (int row = 0; row < board.length; row++) {
+      int temp = board[row][col1];
+      board[row][col1] = board[row][col2];
+      board[row][col2] = temp;
+    }
+  }
+
+  /// 随机重新映射数字
+  void _remapNumbers(List<List<int>> board, int maxNumber) {
+    // 创建数字映射
+    List<int> numbers = List.generate(maxNumber, (i) => i + 1);
+    numbers.shuffle(_random);
+    
+    Map<int, int> mapping = {};
+    for (int i = 0; i < maxNumber; i++) {
+      mapping[i + 1] = numbers[i];
+    }
+    
+    // 应用映射
+    for (int row = 0; row < board.length; row++) {
+      for (int col = 0; col < board[row].length; col++) {
+        if (board[row][col] != 0) {
+          board[row][col] = mapping[board[row][col]]!;
+        }
+      }
+    }
   }
 }

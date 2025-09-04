@@ -71,11 +71,11 @@ class DifficultyDialog extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           border: Border.all(
-            color: difficulty.color.withOpacity(0.3),
+            color: difficulty.color.withValues(alpha: 0.3),
             width: 1.5,
           ),
           borderRadius: BorderRadius.circular(8),
-          color: difficulty.color.withOpacity(0.1),
+          color: difficulty.color.withValues(alpha: 0.1),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

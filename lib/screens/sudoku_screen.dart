@@ -452,67 +452,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
     }
   }
 
-  /// 获取单元格边框颜色
-  Color _getCellBorderColor(int row, int col) {
-    return Colors.grey[400]!; // 所有单元格内部边框都是灰色
-  }
 
-  /// 获取单元格边框宽度  
-  double _getCellBorderWidth(int row, int col) {
-    return 0.5; // 所有单元格内部边框都是细线
-  }
-
-  /// 判断是否是子区域顶部边界
-  bool _isSubRegionTopBoundary(int row) {
-    switch (_game.gridSize) {
-      case 4:
-        return row == 2;
-      case 6:
-        return row == 2 || row == 4;
-      case 9:
-      default:
-        return row == 3 || row == 6;
-    }
-  }
-
-  /// 判断是否是子区域底部边界
-  bool _isSubRegionBottomBoundary(int row) {
-    switch (_game.gridSize) {
-      case 4:
-        return row == 1;
-      case 6:
-        return row == 1 || row == 3;
-      case 9:
-      default:
-        return row == 2 || row == 5;
-    }
-  }
-
-  /// 判断是否是子区域左侧边界
-  bool _isSubRegionLeftBoundary(int col) {
-    switch (_game.gridSize) {
-      case 4:
-        return col == 2;
-      case 6:
-        return col == 3;
-      case 9:
-      default:
-        return col == 3 || col == 6;
-    }
-  }
-
-  /// 判断是否是子区域右侧边界
-  bool _isSubRegionRightBoundary(int col) {
-    switch (_game.gridSize) {
-      case 4:
-        return col == 1;
-      case 6:
-        return col == 2;
-      case 9:
-      default:
-        return col == 2 || col == 5;
-    }
-  }
 
   /// 获取自适应字体大小
   double _getCellFontSize() {
