@@ -126,6 +126,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               
+              const SizedBox(height: 8),
+              
+              const Text(
+                'jinjiazh@qq.com',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              
               const Spacer(flex: 3),
               
               // 根据是否有正在进行的游戏显示不同界面
