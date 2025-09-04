@@ -117,8 +117,15 @@ class _SudokuScreenState extends State<SudokuScreen> {
   }
 
   void _checkGame() {
+    if (_game.checkCount <= 0) return; // 防护检查
+    
     setState(() {
       isCheckMode = !isCheckMode;  // 切换检查模式
+      // 只有在开启检查模式时才消耗次数
+      if (isCheckMode) {
+        _game = _game.copyWith(checkCount: _game.checkCount - 1);
+        SudokuService.saveGame(_game);
+      }
     });
   }
 
@@ -129,6 +136,8 @@ class _SudokuScreenState extends State<SudokuScreen> {
   }
 
   void _showHint() {
+    if (_game.hintCount <= 0) return; // 防护检查
+    
     // 使用智能提示功能选择最容易的格子
     final hint = _sudokuService.getSmartHint(_game);
     if (hint != null) {
@@ -137,6 +146,9 @@ class _SudokuScreenState extends State<SudokuScreen> {
         selectedRow = hint['row']!;
         selectedCol = hint['col']!;
         isHintSelected = true;  // 标记为提示选中
+        // 消耗提示次数
+        _game = _game.copyWith(hintCount: _game.hintCount - 1);
+        SudokuService.saveGame(_game);
       });
     }
   }
@@ -311,13 +323,14 @@ class _SudokuScreenState extends State<SudokuScreen> {
                                 _buildToolButton(
                                   icon: Icons.check_circle_outline,
                                   label: '检查',
-                                  onPressed: _checkGame,
+                                  badgeCount: _game.checkCount,
+                                  onPressed: _game.checkCount > 0 ? _checkGame : null,
                                 ),
                                 _buildToolButton(
                                   icon: Icons.lightbulb_outline,
                                   label: '提示',
-                                  badgeCount: 1,
-                                  onPressed: _showHint,
+                                  badgeCount: _game.hintCount,
+                                  onPressed: _game.hintCount > 0 ? _showHint : null,
                                 ),
                               ],
                             ),
@@ -351,36 +364,40 @@ class _SudokuScreenState extends State<SudokuScreen> {
   Widget _buildToolButton({
     required IconData icon,
     required String label,
-    required VoidCallback onPressed,
+    VoidCallback? onPressed,
     bool isActive = false,
     String? activeText,
     int? badgeCount,
   }) {
+    bool isDisabled = onPressed == null;
+    
     return GestureDetector(
       onTap: onPressed,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.grey[200],
-                child: isActive && activeText != null
-                    ? Text(
-                        activeText,
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+      child: Opacity(
+        opacity: isDisabled ? 0.5 : 1.0,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: isDisabled ? Colors.grey[300] : Colors.grey[200],
+                  child: isActive && activeText != null
+                      ? Text(
+                          activeText,
+                          style: TextStyle(
+                            color: isDisabled ? Colors.grey[400] : Colors.grey,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      : Icon(
+                          icon,
+                          color: isDisabled ? Colors.grey[400] : Colors.grey[600],
+                          size: 20,
                         ),
-                      )
-                    : Icon(
-                        icon,
-                        color: Colors.grey[600],
-                        size: 20,
-                      ),
-              ),
+                ),
               if (badgeCount != null && badgeCount > 0)
                 Positioned(
                   right: 0,
@@ -401,17 +418,18 @@ class _SudokuScreenState extends State<SudokuScreen> {
                     ),
                   ),
                 ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 10,
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isDisabled ? Colors.grey[400] : Colors.grey[600],
+                fontSize: 10,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

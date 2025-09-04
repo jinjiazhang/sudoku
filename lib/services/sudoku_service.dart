@@ -54,6 +54,8 @@ class SudokuService {
       isFixed: result['isFixed'] as List<List<bool>>,
       difficulty: difficulty.displayName,
       gridSize: difficulty.gridSize,
+      checkCount: difficulty.checkLimit,
+      hintCount: difficulty.hintLimit,
     );
   }
 

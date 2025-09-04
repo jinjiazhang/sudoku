@@ -7,6 +7,8 @@ class SudokuGame {
   final int secondsElapsed;
   final bool isCompleted;
   final DateTime startTime;
+  final int checkCount;    // 剩余检查次数
+  final int hintCount;     // 剩余提示次数
   
   SudokuGame({
     required this.board,
@@ -17,6 +19,8 @@ class SudokuGame {
     this.secondsElapsed = 0,
     this.isCompleted = false,
     DateTime? startTime,
+    this.checkCount = 0,
+    this.hintCount = 0,
   }) : startTime = startTime ?? DateTime.now();
 
   SudokuGame copyWith({
@@ -28,6 +32,8 @@ class SudokuGame {
     int? secondsElapsed,
     bool? isCompleted,
     DateTime? startTime,
+    int? checkCount,
+    int? hintCount,
   }) {
     return SudokuGame(
       board: board ?? this.board.map((row) => row.toList()).toList(),
@@ -38,6 +44,8 @@ class SudokuGame {
       secondsElapsed: secondsElapsed ?? this.secondsElapsed,
       isCompleted: isCompleted ?? this.isCompleted,
       startTime: startTime ?? this.startTime,
+      checkCount: checkCount ?? this.checkCount,
+      hintCount: hintCount ?? this.hintCount,
     );
   }
 
@@ -51,6 +59,8 @@ class SudokuGame {
       'secondsElapsed': secondsElapsed,
       'isCompleted': isCompleted,
       'startTime': startTime.toIso8601String(),
+      'checkCount': checkCount,
+      'hintCount': hintCount,
     };
   }
 
@@ -68,25 +78,29 @@ class SudokuGame {
       secondsElapsed: json['secondsElapsed'] ?? 0,
       isCompleted: json['isCompleted'] ?? false,
       startTime: DateTime.parse(json['startTime']),
+      checkCount: json['checkCount'] ?? 0,
+      hintCount: json['hintCount'] ?? 0,
     );
   }
 }
 
 
 enum GameDifficulty {
-  level1('1级', 4, 4, 10), // 4x4网格，1-4数字，10个初始数字
-  level2('2级', 6, 6, 20), // 6x6网格，1-6数字，20个初始数字  
-  level3('3级', 9, 9, 55), // 9x9网格，1-9数字，55个初始数字
-  level4('4级', 9, 9, 50), // 9x9网格，1-9数字，50个初始数字
-  level5('5级', 9, 9, 45), // 9x9网格，1-9数字，45个初始数字
-  level6('6级', 9, 9, 40), // 9x9网格，1-9数字，40个初始数字
-  level7('7级', 9, 9, 35), // 9x9网格，1-9数字，35个初始数字
-  level8('8级', 9, 9, 30), // 9x9网格，1-9数字，30个初始数字
-  level9('9级', 9, 9, 25); // 9x9网格，1-9数字，25个初始数字
+  level1('1级', 4, 4, 10, 5, 3), // 4x4网格，1-4数字，10个初始数字，5次检查，3次提示
+  level2('2级', 6, 6, 20, 4, 2), // 6x6网格，1-6数字，20个初始数字，4次检查，2次提示  
+  level3('3级', 9, 9, 55, 3, 3), // 9x9网格，1-9数字，55个初始数字，3次检查，3次提示
+  level4('4级', 9, 9, 50, 3, 3), // 9x9网格，1-9数字，50个初始数字，3次检查，3次提示
+  level5('5级', 9, 9, 45, 2, 2), // 9x9网格，1-9数字，45个初始数字，2次检查，2次提示
+  level6('6级', 9, 9, 40, 2, 2), // 9x9网格，1-9数字，40个初始数字，2次检查，2次提示
+  level7('7级', 9, 9, 35, 1, 1), // 9x9网格，1-9数字，35个初始数字，1次检查，1次提示
+  level8('8级', 9, 9, 30, 1, 1), // 9x9网格，1-9数字，30个初始数字，1次检查，1次提示
+  level9('9级', 9, 9, 25, 0, 0); // 9x9网格，1-9数字，25个初始数字，0次检查，0次提示
 
-  const GameDifficulty(this.displayName, this.gridSize, this.numberRange, this.initialClues);
+  const GameDifficulty(this.displayName, this.gridSize, this.numberRange, this.initialClues, this.checkLimit, this.hintLimit);
   final String displayName;
   final int gridSize;     // 网格大小 (4x4, 6x6, 9x9)
   final int numberRange;  // 使用的数字范围 (1到numberRange)
   final int initialClues; // 初始显示的数字个数
+  final int checkLimit;   // 检查次数限制
+  final int hintLimit;    // 提示次数限制
 }
