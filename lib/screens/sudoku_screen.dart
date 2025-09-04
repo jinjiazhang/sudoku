@@ -169,70 +169,20 @@ class _SudokuScreenState extends State<SudokuScreen> {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: null,
+        title: Text(
+          '${_game.difficulty}难度',
+          style: const TextStyle(
+            color: Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         centerTitle: true,
         actions: null,
       ),
       body: SafeArea(
         child: Column(
           children: [
-            // 游戏信息栏
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // 难度显示
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        const TextSpan(
-                          text: '难度: ',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 20,
-                          ),
-                        ),
-                        TextSpan(
-                          text: _game.difficulty,
-                          style: const TextStyle(
-                            color: Colors.black87,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // 时间显示 - 固定宽度防止位置跳动
-                  SizedBox(
-                    width: 120,
-                    child: RichText(
-                      text: TextSpan(
-                        children: [
-                          const TextSpan(
-                            text: '时间: ',
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 20,
-                            ),
-                          ),
-                          TextSpan(
-                            text: _sudokuService.formatTime(_game.secondsElapsed),
-                            style: const TextStyle(
-                              color: Colors.black87,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
             
             // 使用统一的LayoutBuilder计算棋盘尺寸并限制控件宽度
             Expanded(
@@ -258,12 +208,52 @@ class _SudokuScreenState extends State<SudokuScreen> {
                     
                     return Column(
                       children: [
-                        // 棋盘区域 - 居中显示，固定大小
-                        Center(
-                          child: SizedBox(
-                            width: availableSize,
-                            height: availableSize,
-                            child: _buildSudokuGrid(),
+                        // 棋盘区域和时间显示
+                        SizedBox(
+                          width: availableSize,
+                          child: Column(
+                            children: [
+                              // 时间显示在棋盘上方右侧
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    child: RichText(
+                                      text: TextSpan(
+                                        children: [
+                                          const TextSpan(
+                                            text: '时间: ',
+                                            style: TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          TextSpan(
+                                            text: _sudokuService.formatTime(_game.secondsElapsed),
+                                            style: const TextStyle(
+                                              color: Colors.black87,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                              fontFeatures: [FontFeature.tabularFigures()],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              // 棋盘
+                              Center(
+                                child: SizedBox(
+                                  width: availableSize,
+                                  height: availableSize,
+                                  child: _buildSudokuGrid(),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         
