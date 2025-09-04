@@ -68,7 +68,7 @@ class GameCompleteDialog {
                 
                 // 庆祝文字
                 const Text(
-                  '🎉 太棒了！ 🎉',
+                  '🎉太棒了！',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -79,7 +79,7 @@ class GameCompleteDialog {
                 const SizedBox(height: 12),
                 
                 const Text(
-                  '挑战成功完成！',
+                  '挑战成功',
                   style: TextStyle(
                     fontSize: 18,
                     color: Colors.white,
