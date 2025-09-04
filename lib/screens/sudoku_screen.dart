@@ -171,14 +171,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
         ),
         title: null,
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings, color: Colors.blue),
-            onPressed: () {
-              // TODO: 打开游戏设置
-            },
-          ),
-        ],
+        actions: null,
       ),
       body: SafeArea(
         child: Column(
@@ -188,7 +181,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // 难度显示
                   RichText(
@@ -508,12 +501,12 @@ class _SudokuScreenState extends State<SudokuScreen> {
   double _getCellFontSize() {
     switch (_game.gridSize) {
       case 4:
-        return 42.0;  // 4x4网格较大字体
+        return 52.0;  // 4x4网格适中大字体
       case 6:
-        return 32.0;  // 6x6网格中等字体
+        return 38.0;  // 6x6网格适中大字体
       case 9:
       default:
-        return 26.0;  // 9x9网格较小字体
+        return 30.0;  // 9x9网格适中大字体
     }
   }
   
