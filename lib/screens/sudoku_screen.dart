@@ -435,8 +435,9 @@ class _SudokuScreenState extends State<SudokuScreen> {
                   number.toString(),
                   style: const TextStyle(
                     fontSize: 40,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w300,
                     color: Colors.blue,
+                    fontFamily: 'SF Pro Display',
                   ),
                 ),
               ),
@@ -745,8 +746,9 @@ class _SudokuScreenState extends State<SudokuScreen> {
                       _game.board[globalRow][globalCol].toString(),
                       style: TextStyle(
                         fontSize: _getCellFontSize(),
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         color: _getCellTextColor(globalRow, globalCol),
+                        fontFamily: 'SF Pro Display',
                       ),
                     )
                   : null,
@@ -798,8 +800,9 @@ class _SudokuScreenState extends State<SudokuScreen> {
                       _game.board[globalRow][globalCol].toString(),
                       style: TextStyle(
                         fontSize: _getCellFontSize(),
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w400,
                         color: _getCellTextColor(globalRow, globalCol),
+                        fontFamily: 'SF Pro Display',
                       ),
                     )
                   : null,
