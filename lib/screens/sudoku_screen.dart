@@ -260,8 +260,8 @@ class _SudokuScreenState extends State<SudokuScreen> {
                     double availableSize = constraints.maxWidth * 0.92;
                     
                     // 调整间距
-                    double dynamicSpacing = 24.0;
-                    double smallSpacing = 18.0;
+                    double dynamicSpacing = 30.0;
+                    double smallSpacing = 24.0;
                     
                     return Column(
                       children: [
@@ -281,8 +281,8 @@ class _SudokuScreenState extends State<SudokuScreen> {
                         Container(
                           width: availableSize,
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 16, 
-                            vertical: 12
+                            horizontal: 0, 
+                            vertical: 16
                           ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -357,7 +357,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
             Stack(
               children: [
                 CircleAvatar(
-                  radius: 22,
+                  radius: 26,
                   backgroundColor: isDisabled ? Colors.grey[300] : Colors.grey[200],
                   child: isActive && activeText != null
                       ? Text(
@@ -371,7 +371,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
                       : Icon(
                           icon,
                           color: isDisabled ? Colors.grey[400] : Colors.grey[600],
-                          size: 24,
+                          size: 28,
                         ),
                 ),
               if (badgeCount != null && badgeCount > 0)
@@ -396,12 +396,12 @@ class _SudokuScreenState extends State<SudokuScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 5),
             Text(
               label,
               style: TextStyle(
                 color: isDisabled ? Colors.grey[400] : Colors.grey[600],
-                fontSize: 12,
+                fontSize: 14,
               ),
             ),
           ],
@@ -434,7 +434,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
                 child: Text(
                   number.toString(),
                   style: const TextStyle(
-                    fontSize: 38,
+                    fontSize: 40,
                     fontWeight: FontWeight.bold,
                     color: Colors.blue,
                   ),
@@ -507,12 +507,12 @@ class _SudokuScreenState extends State<SudokuScreen> {
   double _getCellFontSize() {
     switch (_game.gridSize) {
       case 4:
-        return 36.0;  // 4x4网格较大字体
+        return 42.0;  // 4x4网格较大字体
       case 6:
-        return 28.0;  // 6x6网格中等字体
+        return 32.0;  // 6x6网格中等字体
       case 9:
       default:
-        return 22.0;  // 9x9网格较小字体
+        return 26.0;  // 9x9网格较小字体
     }
   }
   
