@@ -1,16 +1,54 @@
-# sudoku
+# 数独应用
 
-A new Flutter project.
+基于Flutter开发的数独游戏应用。
 
-## Getting Started
+## 功能特性
 
-This project is a starting point for a Flutter application.
+### 已实现功能
+- ✅ 底部导航栏（主页、我）
+- ✅ 主页界面
+  - 每日挑战卡片
+  - 新游戏按钮
+  - 继续游戏按钮（显示游戏时间和难度）
+- ✅ 难度选择对话框（入门、简单、中等、困难）
+- ✅ 数独游戏界面
+  - 9x9数独网格
+  - 游戏信息显示（难度、错误次数、时间）
+  - 工具栏（撤消、擦除、备注、提示）
+  - 数字输入键盘
+- ✅ 我的页面
+  - 奖品和统计数据
+  - 设置选项（设置、如何玩、规则、帮助等）
 
-A few resources to get you started if this is your first Flutter project:
+### 待实现功能
+- 🔄 数独游戏逻辑验证
+- 🔄 游戏状态保存和加载
+- 🔄 计时器和分数系统
+- 🔄 撤消和提示功能
+- 🔄 每日挑战功能
+- 🔄 统计数据功能
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## 项目结构
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```
+lib/
+├── main.dart                 # 应用入口
+├── screens/                  # 页面文件
+│   ├── home_screen.dart      # 主页
+│   ├── profile_screen.dart   # 我的页面
+│   └── sudoku_game_screen.dart # 数独游戏界面
+└── dialogs/                  # 对话框文件
+    └── difficulty_dialog.dart # 难度选择对话框
+```
+
+## 运行项目
+
+```bash
+flutter run
+```
+
+## 测试项目
+
+```bash
+flutter test
+```
