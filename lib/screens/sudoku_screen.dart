@@ -26,6 +26,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
   int selectedCol = -1;
   int selectedNumber = 0;
   bool isNoteMode = false;
+  bool isHintSelected = false;  // 标记是否通过提示选中
   
   @override
   void initState() {
@@ -78,6 +79,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
     setState(() {
       selectedRow = row;
       selectedCol = col;
+      isHintSelected = false;  // 手动选择时清除提示标记
     });
   }
 
@@ -124,21 +126,15 @@ class _SudokuScreenState extends State<SudokuScreen> {
   }
 
   void _showHint() {
-    if (selectedRow != -1 && selectedCol != -1) {
-      final hints = _sudokuService.getHint(_game, selectedRow, selectedCol);
-      if (hints.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('可能的数字: ${hints.join(', ')}')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('该位置已固定或无有效提示')),
-        );
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请先选择一个单元格')),
-      );
+    // 使用智能提示功能选择最容易的格子
+    final hint = _sudokuService.getSmartHint(_game);
+    if (hint != null) {
+      setState(() {
+        // 自动选中建议的格子
+        selectedRow = hint['row']!;
+        selectedCol = hint['col']!;
+        isHintSelected = true;  // 标记为提示选中
+      });
     }
   }
 
@@ -543,7 +539,12 @@ class _SudokuScreenState extends State<SudokuScreen> {
     if (hasConflict) {
       return const Color(0xFFFFE5E5);  // 浅红色背景
     } else if (isSelected) {
-      return const Color(0xFFBBDEFB);  // 当前选中单元格的浅蓝色
+      // 如果是通过提示选中的，显示特殊的绿色高亮
+      if (isHintSelected) {
+        return const Color(0xFFE8F5E8);  // 浅绿色背景，表示智能提示
+      } else {
+        return const Color(0xFFBBDEFB);  // 当前选中单元格的浅蓝色
+      }
     } else if (isSameNumber) {
       return const Color(0xFF81C4E7);  // 相同数字的中等蓝色背景，匹配截图
     } else if (isHighlighted) {

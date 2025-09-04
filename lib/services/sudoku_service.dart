@@ -1,6 +1,46 @@
 import '../models/sudoku_game.dart';
 import 'dart:math';
 
+/// 格子难度分析类
+class _CellDifficulty {
+  final int row, col;
+  final List<int> validNumbers;
+  final int constraintLevel;
+  final bool hasHiddenSingle;
+  final double easyScore;
+  
+  _CellDifficulty({
+    required this.row,
+    required this.col,
+    required this.validNumbers,
+    required this.constraintLevel,
+    required this.hasHiddenSingle,
+  }) : easyScore = _calculateEasyScore(validNumbers.length, constraintLevel, hasHiddenSingle);
+  
+  static double _calculateEasyScore(int validCount, int constraints, bool hiddenSingle) {
+    double score = 0;
+    
+    // 1. 可选数字越少分数越高（最重要因素）
+    if (validCount == 1) {
+      score += 1000;      // 确定答案
+    } else if (validCount == 2) {
+      score += 100;  // 很容易
+    } else if (validCount == 3) {
+      score += 10;   // 中等
+    } else {
+      score += 1;    // 较难
+    }
+    
+    // 2. 约束越多分数越高
+    score += constraints * 2;
+    
+    // 3. 隐藏单候选数加分
+    if (hiddenSingle) score += 50;
+    
+    return score;
+  }
+}
+
 class SudokuService {
   final Random _random = Random();
   static SudokuGame? _savedGame;
@@ -196,23 +236,136 @@ class SudokuService {
     return _isValidSudoku(game.board, gridSize);
   }
 
-  /// 获取提示
-  List<int> getHint(SudokuGame game, int row, int col) {
-    if (game.isFixed[row][col]) return [];
-
-    List<int> possibleNumbers = [];
+  /// 智能选择最容易解决的空白格子
+  Map<String, int>? getSmartHint(SudokuGame game) {
+    List<_CellDifficulty> candidates = [];
     
-    // 根据游戏难度获取数字范围
+    // 分析所有空白格子
+    for (int row = 0; row < game.gridSize; row++) {
+      for (int col = 0; col < game.gridSize; col++) {
+        if (game.board[row][col] == 0 && !game.isFixed[row][col]) {
+          List<int> validNumbers = _getValidNumbers(game, row, col);
+          if (validNumbers.isNotEmpty) {
+            int constraints = _getConstraintLevel(game, row, col);
+            bool hasHiddenSingle = _hasHiddenSingle(game, row, col, validNumbers);
+            
+            candidates.add(_CellDifficulty(
+              row: row,
+              col: col,
+              validNumbers: validNumbers,
+              constraintLevel: constraints,
+              hasHiddenSingle: hasHiddenSingle,
+            ));
+          }
+        }
+      }
+    }
+    
+    if (candidates.isEmpty) return null;
+    
+    // 按容易程度排序，选择最容易的
+    candidates.sort((a, b) => b.easyScore.compareTo(a.easyScore));
+    _CellDifficulty best = candidates.first;
+    
+    return {
+      'row': best.row,
+      'col': best.col,
+      'validCount': best.validNumbers.length,
+    };
+  }
+  
+  /// 获取指定位置的有效数字
+  List<int> _getValidNumbers(SudokuGame game, int row, int col) {
+    List<int> validNumbers = [];
     GameDifficulty? difficulty = _getDifficultyFromName(game.difficulty);
     int maxNumber = difficulty?.numberRange ?? 9;
     
     for (int number = 1; number <= maxNumber; number++) {
       if (isValidMove(game, row, col, number)) {
-        possibleNumbers.add(number);
+        validNumbers.add(number);
       }
     }
+    
+    return validNumbers;
+  }
+  
+  /// 计算格子的约束强度
+  int _getConstraintLevel(SudokuGame game, int row, int col) {
+    int constraints = 0;
+    
+    // 同行已填数字数量
+    for (int c = 0; c < game.gridSize; c++) {
+      if (game.board[row][c] != 0) constraints++;
+    }
+    
+    // 同列已填数字数量
+    for (int r = 0; r < game.gridSize; r++) {
+      if (game.board[r][col] != 0) constraints++;
+    }
+    
+    // 同子区域已填数字数量
+    List<List<int>> subRegion = _getSubRegionPositions(row, col, game.gridSize);
+    for (var pos in subRegion) {
+      if (game.board[pos[0]][pos[1]] != 0) constraints++;
+    }
+    
+    return constraints;
+  }
+  
+  /// 检查是否有隐藏单候选数
+  bool _hasHiddenSingle(SudokuGame game, int row, int col, List<int> validNumbers) {
+    for (int number in validNumbers) {
+      if (_isHiddenSingleInRow(game, row, col, number) ||
+          _isHiddenSingleInCol(game, row, col, number) ||
+          _isHiddenSingleInRegion(game, row, col, number)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  /// 检查在同行中是否为隐藏单候选数
+  bool _isHiddenSingleInRow(SudokuGame game, int row, int col, int number) {
+    for (int c = 0; c < game.gridSize; c++) {
+      if (c != col && game.board[row][c] == 0) {
+        if (isValidMove(game, row, c, number)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+  
+  /// 检查在同列中是否为隐藏单候选数
+  bool _isHiddenSingleInCol(SudokuGame game, int row, int col, int number) {
+    for (int r = 0; r < game.gridSize; r++) {
+      if (r != row && game.board[r][col] == 0) {
+        if (isValidMove(game, r, col, number)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+  
+  /// 检查在同子区域中是否为隐藏单候选数
+  bool _isHiddenSingleInRegion(SudokuGame game, int row, int col, int number) {
+    List<List<int>> subRegion = _getSubRegionPositions(row, col, game.gridSize);
+    for (var pos in subRegion) {
+      int r = pos[0], c = pos[1];
+      if ((r != row || c != col) && game.board[r][c] == 0) {
+        if (isValidMove(game, r, c, number)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
 
-    return possibleNumbers;
+  /// 获取提示（保留原有方法以兼容）
+  List<int> getHint(SudokuGame game, int row, int col) {
+    if (game.isFixed[row][col]) return [];
+    return _getValidNumbers(game, row, col);
   }
 
   /// 格式化时间
