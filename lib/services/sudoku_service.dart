@@ -151,6 +151,168 @@ class SudokuService {
     return game.copyWith(board: newBoard);
   }
 
+  /// 检查数字在当前位置是否有错误
+  bool isNumberIncorrect(SudokuGame game, int row, int col) {
+    int number = game.board[row][col];
+    // 固定数字和空格不检查错误
+    if (number == 0 || game.isFixed[row][col]) return false;
+    
+    // 检查与当前数字冲突的其他位置
+    List<int> conflictPositions = _findConflictingPositions(game, row, col, number);
+    
+    // 如果有冲突
+    if (conflictPositions.isNotEmpty) {
+      // 检查是否与固定数字冲突
+      for (int i = 0; i < conflictPositions.length; i += 2) {
+        int conflictRow = conflictPositions[i];
+        int conflictCol = conflictPositions[i + 1];
+        if (game.isFixed[conflictRow][conflictCol]) {
+          return true; // 与固定数字冲突，当前位置一定是错误的
+        }
+      }
+      
+      // 如果冲突的都是用户输入的数字，需要判断哪个是"正确"的
+      // 策略：如果一个数字能在其位置形成更多的有效连接，则认为它更可能是正确的
+      int currentValidConnections = _countValidConnections(game, row, col, number);
+      
+      for (int i = 0; i < conflictPositions.length; i += 2) {
+        int conflictRow = conflictPositions[i];
+        int conflictCol = conflictPositions[i + 1];
+        int conflictValidConnections = _countValidConnections(game, conflictRow, conflictCol, number);
+        
+        // 如果冲突位置的有效连接数更多，则当前位置是错误的
+        if (conflictValidConnections > currentValidConnections) {
+          return true;
+        }
+      }
+      
+      // 默认情况下不标记为错误（保持原有逻辑）
+      return false;
+    }
+    
+    return false;
+  }
+  
+  /// 计算一个位置上的数字与周围数字形成的有效连接数
+  int _countValidConnections(SudokuGame game, int row, int col, int number) {
+    int connections = 0;
+    int gridSize = game.gridSize;
+    
+    // 检查同行中与该数字不冲突的其他数字数量
+    for (int c = 0; c < gridSize; c++) {
+      if (c != col && game.board[row][c] != 0 && game.board[row][c] != number) {
+        connections++;
+      }
+    }
+    
+    // 检查同列中与该数字不冲突的其他数字数量
+    for (int r = 0; r < gridSize; r++) {
+      if (r != row && game.board[r][col] != 0 && game.board[r][col] != number) {
+        connections++;
+      }
+    }
+    
+    // 检查同子区域中与该数字不冲突的其他数字数量
+    List<List<int>> subRegionPositions = _getSubRegionPositions(row, col, gridSize);
+    for (List<int> pos in subRegionPositions) {
+      int r = pos[0];
+      int c = pos[1];
+      if ((r != row || c != col) && game.board[r][c] != 0 && game.board[r][c] != number) {
+        connections++;
+      }
+    }
+    
+    return connections;
+  }
+  
+  /// 查找与指定位置数字冲突的其他位置
+  List<int> _findConflictingPositions(SudokuGame game, int row, int col, int number) {
+    List<int> conflicts = [];
+    int gridSize = game.gridSize;
+    
+    // 检查同行
+    for (int c = 0; c < gridSize; c++) {
+      if (c != col && game.board[row][c] == number) {
+        conflicts.addAll([row, c]);
+      }
+    }
+    
+    // 检查同列
+    for (int r = 0; r < gridSize; r++) {
+      if (r != row && game.board[r][col] == number) {
+        conflicts.addAll([r, col]);
+      }
+    }
+    
+    // 检查同子区域
+    List<List<int>> subRegionPositions = _getSubRegionPositions(row, col, gridSize);
+    for (List<int> pos in subRegionPositions) {
+      int r = pos[0];
+      int c = pos[1];
+      if ((r != row || c != col) && game.board[r][c] == number) {
+        conflicts.addAll([r, c]);
+      }
+    }
+    
+    return conflicts;
+  }
+  
+  /// 获取指定位置所在子区域的所有位置
+  List<List<int>> _getSubRegionPositions(int row, int col, int gridSize) {
+    List<List<int>> positions = [];
+    
+    switch (gridSize) {
+      case 4:
+        int subGridRow = (row ~/ 2) * 2;
+        int subGridCol = (col ~/ 2) * 2;
+        for (int r = subGridRow; r < subGridRow + 2; r++) {
+          for (int c = subGridCol; c < subGridCol + 2; c++) {
+            positions.add([r, c]);
+          }
+        }
+        break;
+      case 6:
+        int subGridRow = (row ~/ 2) * 2;
+        int subGridCol = (col ~/ 3) * 3;
+        for (int r = subGridRow; r < subGridRow + 2; r++) {
+          for (int c = subGridCol; c < subGridCol + 3; c++) {
+            positions.add([r, c]);
+          }
+        }
+        break;
+      case 9:
+      default:
+        int subGridRow = (row ~/ 3) * 3;
+        int subGridCol = (col ~/ 3) * 3;
+        for (int r = subGridRow; r < subGridRow + 3; r++) {
+          for (int c = subGridCol; c < subGridCol + 3; c++) {
+            positions.add([r, c]);
+          }
+        }
+        break;
+    }
+    
+    return positions;
+  }
+  
+  /// 获取可选择的有效数字（用于高亮显示）
+  List<int> getValidNumbers(SudokuGame game, int selectedRow, int selectedCol) {
+    if (selectedRow == -1 || selectedCol == -1) return [];
+    if (game.isFixed[selectedRow][selectedCol]) return [];
+    
+    List<int> validNumbers = [];
+    GameDifficulty? difficulty = _getDifficultyFromName(game.difficulty);
+    int maxNumber = difficulty?.numberRange ?? 9;
+    
+    for (int number = 1; number <= maxNumber; number++) {
+      if (isValidMove(game, selectedRow, selectedCol, number)) {
+        validNumbers.add(number);
+      }
+    }
+    
+    return validNumbers;
+  }
+
   /// 检查游戏是否完成
   bool isGameComplete(SudokuGame game) {
     int gridSize = game.gridSize;

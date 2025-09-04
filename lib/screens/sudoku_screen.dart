@@ -75,12 +75,10 @@ class _SudokuScreenState extends State<SudokuScreen> {
   }
 
   void _selectCell(int row, int col) {
-    if (!_game.isFixed[row][col]) {
-      setState(() {
-        selectedRow = row;
-        selectedCol = col;
-      });
-    }
+    setState(() {
+      selectedRow = row;
+      selectedCol = col;
+    });
   }
 
   void _inputNumber(int number) {
@@ -449,26 +447,23 @@ class _SudokuScreenState extends State<SudokuScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: List.generate(numberRange, (index) {
         int number = index + 1;
+        
         return GestureDetector(
           onTap: () => _inputNumber(number),
           child: Container(
             width: 30,
             height: 30,
             decoration: BoxDecoration(
-              color: selectedNumber == number 
-                  ? Colors.blue 
-                  : Colors.transparent,
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(6),
             ),
             child: Center(
               child: Text(
                 number.toString(),
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: selectedNumber == number 
-                      ? Colors.white 
-                      : Colors.blue,
+                  color: Colors.blue,
                 ),
               ),
             ),
@@ -496,7 +491,24 @@ class _SudokuScreenState extends State<SudokuScreen> {
     if (row == selectedRow || col == selectedCol) return true;
     
     // 高亮同子区域的单元格
-    return _isInSameSubRegion(row, col, selectedRow, selectedCol);
+    if (_isInSameSubRegion(row, col, selectedRow, selectedCol)) return true;
+    
+    // 如果选中的单元格有数字，高亮棋盘上所有相同数字的单元格
+    int selectedNumber = _game.board[selectedRow][selectedCol];
+    if (selectedNumber != 0 && _game.board[row][col] == selectedNumber) {
+      return true;
+    }
+    
+    return false;
+  }
+  
+  /// 判断是否为相同数字且非当前选中单元格（用于深色背景）
+  bool _isSameNumberCell(int row, int col) {
+    if (selectedRow == -1 || selectedCol == -1) return false;
+    if (row == selectedRow && col == selectedCol) return false; // 排除当前选中的单元格
+    
+    int selectedNumber = _game.board[selectedRow][selectedCol];
+    return selectedNumber != 0 && _game.board[row][col] == selectedNumber;
   }
 
   /// 判断两个单元格是否在同一子区域
@@ -527,6 +539,39 @@ class _SudokuScreenState extends State<SudokuScreen> {
       case 9:
       default:
         return 16.0;  // 9x9网格较小字体
+    }
+  }
+  
+  /// 获取单元格文本颜色
+  Color _getCellTextColor(int row, int col) {
+    // 如果是固定数字，显示黑色
+    if (_game.isFixed[row][col]) {
+      return Colors.black;
+    }
+    
+    // 如果数字有错误，显示红色
+    if (_sudokuService.isNumberIncorrect(_game, row, col)) {
+      return Colors.red;
+    }
+    
+    // 用户输入的正确数字显示蓝色
+    return Colors.blue;
+  }
+  
+  /// 获取单元格背景颜色
+  Color _getCellBackgroundColor(int row, int col) {
+    bool isSelected = row == selectedRow && col == selectedCol;
+    bool isHighlighted = _isHighlightedCell(row, col);
+    bool isSameNumber = _isSameNumberCell(row, col);
+    
+    if (isSelected) {
+      return const Color(0xFFBBDEFB);  // 当前选中单元格的浅蓝色
+    } else if (isSameNumber) {
+      return const Color(0xFF81C4E7);  // 相同数字的中等蓝色背景，匹配截图
+    } else if (isHighlighted) {
+      return const Color(0xFFE3F2FD);  // 其他高亮区域的非常浅的蓝色
+    } else {
+      return Colors.white;
     }
   }
 
@@ -695,18 +740,11 @@ class _SudokuScreenState extends State<SudokuScreen> {
         int globalRow = subGridRow * 2 + localRow;
         int globalCol = subGridCol * 3 + localCol;
         
-        bool isSelected = globalRow == selectedRow && globalCol == selectedCol;
-        bool isHighlighted = _isHighlightedCell(globalRow, globalCol);
-        
         return GestureDetector(
           onTap: () => _selectCell(globalRow, globalCol),
           child: Container(
             decoration: BoxDecoration(
-              color: isSelected 
-                  ? const Color(0xFFBBDEFB)
-                  : isHighlighted 
-                      ? Colors.blue[50] 
-                      : Colors.white,
+              color: _getCellBackgroundColor(globalRow, globalCol),
               border: Border(
                 right: localCol < 2
                     ? BorderSide(color: Colors.grey[400]!, width: 0.5)
@@ -723,9 +761,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
                       style: TextStyle(
                         fontSize: _getCellFontSize(),
                         fontWeight: FontWeight.bold,
-                        color: _game.isFixed[globalRow][globalCol] 
-                            ? Colors.black 
-                            : Colors.blue,
+                        color: _getCellTextColor(globalRow, globalCol),
                       ),
                     )
                   : null,
@@ -757,18 +793,11 @@ class _SudokuScreenState extends State<SudokuScreen> {
         int globalRow = subGridRow * subGridSize + localRow;
         int globalCol = subGridCol * subGridSize + localCol;
         
-        bool isSelected = globalRow == selectedRow && globalCol == selectedCol;
-        bool isHighlighted = _isHighlightedCell(globalRow, globalCol);
-        
         return GestureDetector(
           onTap: () => _selectCell(globalRow, globalCol),
           child: Container(
             decoration: BoxDecoration(
-              color: isSelected 
-                  ? const Color(0xFFBBDEFB) // 浅蓝色，匹配参考图
-                  : isHighlighted 
-                      ? Colors.blue[50] 
-                      : Colors.white,
+              color: _getCellBackgroundColor(globalRow, globalCol),
               border: Border(
                 right: localCol < subGridSize - 1
                     ? BorderSide(color: Colors.grey[400]!, width: 0.5)
@@ -785,9 +814,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
                       style: TextStyle(
                         fontSize: _getCellFontSize(),
                         fontWeight: FontWeight.bold,
-                        color: _game.isFixed[globalRow][globalCol] 
-                            ? Colors.black 
-                            : Colors.blue,
+                        color: _getCellTextColor(globalRow, globalCol),
                       ),
                     )
                   : null,
