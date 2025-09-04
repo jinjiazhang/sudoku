@@ -27,6 +27,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
   int selectedNumber = 0;
   bool isNoteMode = false;
   bool isHintSelected = false;  // 标记是否通过提示选中
+  bool isCheckMode = false;     // 标记是否在检查模式
   
   @override
   void initState() {
@@ -80,6 +81,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
       selectedRow = row;
       selectedCol = col;
       isHintSelected = false;  // 手动选择时清除提示标记
+      isCheckMode = false;     // 手动选择时退出检查模式
     });
   }
 
@@ -88,6 +90,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
       setState(() {
         _game = _sudokuService.placeNumber(_game, selectedRow, selectedCol, number);
         selectedNumber = number;
+        isCheckMode = false;  // 输入数字时退出检查模式
         
         // 保存游戏状态
         SudokuService.saveGame(_game);
@@ -106,17 +109,17 @@ class _SudokuScreenState extends State<SudokuScreen> {
     if (selectedRow != -1 && selectedCol != -1) {
       setState(() {
         _game = _sudokuService.eraseCell(_game, selectedRow, selectedCol);
+        isCheckMode = false;  // 擦除时退出检查模式
         // 保存游戏状态
         SudokuService.saveGame(_game);
       });
     }
   }
 
-  void _undoMove() {
-    // TODO: 实现撤消功能
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('撤消功能待实现')),
-    );
+  void _checkGame() {
+    setState(() {
+      isCheckMode = !isCheckMode;  // 切换检查模式
+    });
   }
 
   void _toggleNoteMode() {
@@ -294,11 +297,6 @@ class _SudokuScreenState extends State<SudokuScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
                                 _buildToolButton(
-                                  icon: Icons.undo,
-                                  label: '撤消',
-                                  onPressed: _undoMove,
-                                ),
-                                _buildToolButton(
                                   icon: Icons.brush,
                                   label: '擦除',
                                   onPressed: _eraseCell,
@@ -309,6 +307,11 @@ class _SudokuScreenState extends State<SudokuScreen> {
                                   isActive: isNoteMode,
                                   activeText: 'OFF',
                                   onPressed: _toggleNoteMode,
+                                ),
+                                _buildToolButton(
+                                  icon: Icons.check_circle_outline,
+                                  label: '检查',
+                                  onPressed: _checkGame,
                                 ),
                                 _buildToolButton(
                                   icon: Icons.lightbulb_outline,
@@ -535,10 +538,17 @@ class _SudokuScreenState extends State<SudokuScreen> {
     bool isSameNumber = _isSameNumberCell(row, col);
     bool hasConflict = _sudokuService.hasConflict(_game, row, col);
     
-    // 如果有冲突，显示浅红色背景（最高优先级）
-    if (hasConflict) {
-      return const Color(0xFFFFE5E5);  // 浅红色背景
-    } else if (isSelected) {
+    // 检查模式：显示输入格子的冲突状态
+    if (isCheckMode && _game.board[row][col] != 0 && !_game.isFixed[row][col]) {
+      if (hasConflict) {
+        return const Color(0xFFFFCCCC);  // 红色背景：有冲突的输入格子
+      } else {
+        return const Color(0xFFCCFFCC);  // 绿色背景：没有冲突的输入格子
+      }
+    }
+    
+    // 正常模式：不显示冲突红色背景
+    if (isSelected) {
       // 如果是通过提示选中的，显示特殊的绿色高亮
       if (isHintSelected) {
         return const Color(0xFFE8F5E8);  // 浅绿色背景，表示智能提示
