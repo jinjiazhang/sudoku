@@ -192,50 +192,54 @@ class _SudokuScreenState extends State<SudokuScreen> {
           children: [
             // 游戏信息栏
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(vertical: 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        '难度',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 10,
+                  // 难度显示
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        const TextSpan(
+                          text: '难度: ',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 14,
+                          ),
                         ),
-                      ),
-                      Text(
-                        _game.difficulty,
-                        style: const TextStyle(
-                          color: Colors.black87,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                        TextSpan(
+                          text: _game.difficulty,
+                          style: const TextStyle(
+                            color: Colors.black87,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-// 错误计数已移除
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      const Text(
-                        '时间',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 10,
+                  // 时间显示
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        const TextSpan(
+                          text: '时间: ',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 14,
+                          ),
                         ),
-                      ),
-                      Text(
-                        _sudokuService.formatTime(_game.secondsElapsed),
-                        style: const TextStyle(
-                          color: Colors.black87,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                        TextSpan(
+                          text: _sudokuService.formatTime(_game.secondsElapsed),
+                          style: const TextStyle(
+                            color: Colors.black87,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
