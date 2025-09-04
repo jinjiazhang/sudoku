@@ -400,27 +400,29 @@ class SudokuService {
   /// 生成分级数独棋盘
   Map<String, List<List<dynamic>>> _generateSudokuBoard(GameDifficulty difficulty) {
     // 根据难度生成不同的数独
-    switch (difficulty) {
-      case GameDifficulty.level1:
-        return _generateLevel1Board(); // 1-4数字
-      case GameDifficulty.level2:
-        return _generateLevel2Board(); // 1-6数字
-      default:
-        return _generateStandardBoard(difficulty); // 1-9数字，不同提示数量
+    if (difficulty.gridSize == 4) {
+      // 4x4网格：Level 1, Level 2
+      return _generate4x4Board(difficulty);
+    } else if (difficulty.gridSize == 6) {
+      // 6x6网格：Level 3, Level 4
+      return _generate6x6Board(difficulty);
+    } else {
+      // 9x9网格：Level 5-9
+      return _generateStandardBoard(difficulty);
     }
   }
   
-  /// 生成1级难度棋盘（4x4网格，1-4数字）
-  Map<String, List<List<dynamic>>> _generateLevel1Board() {
+  /// 生成4x4网格棋盘（Level 1, Level 2）
+  Map<String, List<List<dynamic>>> _generate4x4Board(GameDifficulty difficulty) {
     // 生成完整的4x4数独解
     List<List<int>> completedBoard = _generateComplete4x4Board();
     
     // 创建游戏棋盘
     List<List<int>> board = completedBoard.map((row) => row.toList()).toList();
     
-    // 随机移除数字，保留10个数字（根据难度设置）
+    // 随机移除数字，根据具体难度的初始数字个数
     int totalCells = 4 * 4;
-    int cluesToRemove = totalCells - GameDifficulty.level1.initialClues;
+    int cluesToRemove = totalCells - difficulty.initialClues;
     _removeClues(board, 4, cluesToRemove);
     
     // 设置固定位置
@@ -481,17 +483,17 @@ class SudokuService {
     _remapNumbers(board, 4);
   }
   
-  /// 生成2级难度棋盘（6x6数字，1-6数字）
-  Map<String, List<List<dynamic>>> _generateLevel2Board() {
+  /// 生成6x6网格棋盘（Level 3, Level 4）
+  Map<String, List<List<dynamic>>> _generate6x6Board(GameDifficulty difficulty) {
     // 生成完整的6x6数独解
     List<List<int>> completedBoard = _generateComplete6x6Board();
     
     // 创建游戏棋盘
     List<List<int>> board = completedBoard.map((row) => row.toList()).toList();
     
-    // 随机移除数字，保留20个数字（根据难度设置）
+    // 随机移除数字，根据具体难度的初始数字个数
     int totalCells = 6 * 6;
-    int cluesToRemove = totalCells - GameDifficulty.level2.initialClues;
+    int cluesToRemove = totalCells - difficulty.initialClues;
     _removeClues(board, 6, cluesToRemove);
     
     // 设置固定位置
