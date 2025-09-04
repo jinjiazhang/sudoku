@@ -371,7 +371,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
                       badgeCount.toString(),
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 8,
+                        fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
