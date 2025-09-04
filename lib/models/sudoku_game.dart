@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class SudokuGame {
   final List<List<int>> board;
   final List<List<bool>> isFixed;
@@ -97,48 +95,4 @@ enum GameDifficulty {
   final int gridSize;     // 网格大小 (4x4, 6x6, 9x9)
   final int numberRange;  // 使用的数字范围 (1到numberRange)
   final int initialClues; // 初始显示的数字个数
-  
-
-  /// 获取描述文本
-  String get description {
-    switch (this) {
-      case GameDifficulty.level1:
-        return '4x4网格，1-4数字';
-      case GameDifficulty.level2:
-        return '6x6网格，1-6数字';
-      case GameDifficulty.level3:
-        return '9x9数独，很多提示';
-      case GameDifficulty.level4:
-        return '9x9数独，较多提示';
-      case GameDifficulty.level5:
-        return '9x9数独，适量提示';
-      case GameDifficulty.level6:
-        return '9x9数独，较少提示';
-      case GameDifficulty.level7:
-        return '9x9数独，很少提示';
-      case GameDifficulty.level8:
-        return '9x9数独，极少提示';
-      case GameDifficulty.level9:
-        return '9x9数独，最少提示';
-    }
-  }
-
-  /// 获取颜色
-  Color get color {
-    switch (this) {
-      case GameDifficulty.level1:
-      case GameDifficulty.level2:
-        return const Color(0xFF4CAF50); // 绿色 - 简单
-      case GameDifficulty.level3:
-      case GameDifficulty.level4:
-      case GameDifficulty.level5:
-        return const Color(0xFF2196F3); // 蓝色 - 中等
-      case GameDifficulty.level6:
-      case GameDifficulty.level7:
-        return const Color(0xFFFF9800); // 橙色 - 困难
-      case GameDifficulty.level8:
-      case GameDifficulty.level9:
-        return const Color(0xFFF44336); // 红色 - 极难
-    }
-  }
 }
