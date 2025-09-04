@@ -31,17 +31,33 @@ This is a Flutter-based Sudoku application. The project follows standard Flutter
 
 ## Project Structure
 
-- `lib/main.dart` - Application entry point with MyApp root widget
-- `test/` - Unit and widget tests
-- `android/`, `ios/`, `web/`, `windows/`, `linux/`, `macos/` - Platform-specific code
-- `pubspec.yaml` - Project configuration and dependencies
+```
+lib/
+├── main.dart                 # Application entry point
+├── screens/                  # UI screens
+│   ├── home_screen.dart      # Main page with daily challenge and game buttons
+│   ├── profile_screen.dart   # Profile/settings page
+│   └── sudoku_screen.dart    # Sudoku game interface
+├── models/                   # Data models
+│   └── sudoku_game.dart      # Sudoku game data structures
+├── services/                 # Business logic
+│   └── sudoku_service.dart   # Sudoku game logic and validation
+└── dialogs/                  # Dialog components
+    └── difficulty_dialog.dart # Difficulty selection dialog
+```
 
 ## Architecture Notes
 
-This is currently a basic Flutter app with:
-- Material Design theming using ColorScheme.fromSeed
-- StatefulWidget pattern for state management (counter example)
-- Standard Flutter project structure for multi-platform development
+The app follows a clean architecture pattern with separation of concerns:
+- **UI Layer** (`screens/`): Contains only presentation logic and UI components
+- **Service Layer** (`services/`): Contains business logic and game rules
+- **Data Layer** (`models/`): Contains data structures and models
+- **Components** (`dialogs/`): Reusable UI components
+
+### Key Classes:
+- `SudokuGame`: Data model representing game state
+- `SudokuService`: Service class handling game logic, validation, and operations
+- `SudokuScreen`: UI screen for the game interface
 
 ## Testing Strategy
 

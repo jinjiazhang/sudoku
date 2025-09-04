@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import '../models/sudoku_game.dart';
+import '../services/sudoku_service.dart';
 
 class SudokuScreen extends StatefulWidget {
   final String difficulty;
@@ -16,89 +18,46 @@ class SudokuScreen extends StatefulWidget {
 }
 
 class _SudokuScreenState extends State<SudokuScreen> {
-  late List<List<int>> board;
-  late List<List<bool>> isFixed;
+  late SudokuGame _game;
+  late SudokuService _sudokuService;
+  late Timer _gameTimer;
+  
   int selectedRow = -1;
   int selectedCol = -1;
   int selectedNumber = 0;
-  int mistakes = 0;
-  int score = 0;
-  late Timer gameTimer;
-  int secondsElapsed = 0;
   bool isNoteMode = false;
-  bool showHints = true;
   
   @override
   void initState() {
     super.initState();
+    _sudokuService = SudokuService();
     _initializeGame();
     _startTimer();
   }
 
   @override
   void dispose() {
-    gameTimer.cancel();
+    _gameTimer.cancel();
     super.dispose();
   }
 
   void _initializeGame() {
-    board = List.generate(9, (i) => List.generate(9, (j) => 0));
-    isFixed = List.generate(9, (i) => List.generate(9, (j) => false));
-    
-    // 模拟一个数独棋盘（基于设计图中的布局）
-    _loadSampleBoard();
-    
-    if (widget.isResuming) {
-      secondsElapsed = 35; // 模拟继续游戏的时间
-    }
-  }
-
-  void _loadSampleBoard() {
-    // 基于设计图片中的数独布局
-    List<List<int>> sampleBoard = [
-      [0, 0, 2, 7, 0, 1, 0, 0, 6],
-      [0, 0, 0, 6, 9, 0, 0, 1, 0],
-      [9, 6, 0, 0, 8, 0, 5, 3, 0],
-      [9, 8, 4, 0, 0, 0, 6, 4, 0],
-      [2, 0, 0, 0, 0, 0, 0, 0, 0],
-      [6, 0, 3, 0, 5, 8, 0, 0, 0],
-      [0, 7, 8, 0, 1, 4, 9, 0, 0],
-      [4, 2, 0, 3, 6, 7, 0, 0, 5],
-      [5, 0, 1, 0, 0, 9, 3, 0, 4],
-    ];
-    
-    List<List<bool>> fixedCells = [
-      [false, false, true, true, false, true, false, false, true],
-      [false, false, false, true, true, false, false, true, false],
-      [true, true, false, false, true, false, true, true, false],
-      [true, true, true, false, false, false, true, true, false],
-      [true, false, false, false, false, false, false, false, false],
-      [true, false, true, false, true, true, false, false, false],
-      [false, true, true, false, true, true, true, false, false],
-      [true, true, false, true, true, true, false, false, true],
-      [true, false, true, false, false, true, true, false, true],
-    ];
-    
-    board = sampleBoard.map((row) => row.toList()).toList();
-    isFixed = fixedCells.map((row) => row.toList()).toList();
+    _game = _sudokuService.createSampleGame(
+      widget.difficulty,
+      isResuming: widget.isResuming,
+    );
   }
 
   void _startTimer() {
-    gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       setState(() {
-        secondsElapsed++;
+        _game = _game.copyWith(secondsElapsed: _game.secondsElapsed + 1);
       });
     });
   }
 
-  String _formatTime(int seconds) {
-    int minutes = seconds ~/ 60;
-    int remainingSeconds = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
-  }
-
   void _selectCell(int row, int col) {
-    if (!isFixed[row][col]) {
+    if (!_game.isFixed[row][col]) {
       setState(() {
         selectedRow = row;
         selectedCol = col;
@@ -107,27 +66,33 @@ class _SudokuScreenState extends State<SudokuScreen> {
   }
 
   void _inputNumber(int number) {
-    if (selectedRow != -1 && selectedCol != -1 && !isFixed[selectedRow][selectedCol]) {
+    if (selectedRow != -1 && selectedCol != -1) {
       setState(() {
-        if (board[selectedRow][selectedCol] == number) {
-          board[selectedRow][selectedCol] = 0;
-        } else {
-          board[selectedRow][selectedCol] = number;
+        _game = _sudokuService.placeNumber(_game, selectedRow, selectedCol, number);
+        selectedNumber = number;
+        
+        // 检查游戏是否完成
+        if (_sudokuService.isGameComplete(_game)) {
+          _gameTimer.cancel();
+          _showGameCompleteDialog();
         }
       });
     }
   }
 
   void _eraseCell() {
-    if (selectedRow != -1 && selectedCol != -1 && !isFixed[selectedRow][selectedCol]) {
+    if (selectedRow != -1 && selectedCol != -1) {
       setState(() {
-        board[selectedRow][selectedCol] = 0;
+        _game = _sudokuService.eraseCell(_game, selectedRow, selectedCol);
       });
     }
   }
 
   void _undoMove() {
     // TODO: 实现撤消功能
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('撤消功能待实现')),
+    );
   }
 
   void _toggleNoteMode() {
@@ -137,7 +102,45 @@ class _SudokuScreenState extends State<SudokuScreen> {
   }
 
   void _showHint() {
-    // TODO: 实现提示功能
+    if (selectedRow != -1 && selectedCol != -1) {
+      final hints = _sudokuService.getHint(_game, selectedRow, selectedCol);
+      if (hints.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('可能的数字: ${hints.join(', ')}')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('该位置已固定或无有效提示')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请先选择一个单元格')),
+      );
+    }
+  }
+
+  void _showGameCompleteDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('恭喜！'),
+          content: Text(
+            '游戏完成！\n用时: ${_sudokuService.formatTime(_game.secondsElapsed)}\n错误: ${_game.mistakes}次',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop(); // 返回主界面
+              },
+              child: const Text('返回主页'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -152,7 +155,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          score.toString(),
+          _game.score.toString(),
           style: const TextStyle(
             color: Colors.black87,
             fontSize: 24,
@@ -169,211 +172,216 @@ class _SudokuScreenState extends State<SudokuScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // 游戏信息栏
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '难度',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 12,
-                      ),
-                    ),
-                    Text(
-                      widget.difficulty,
-                      style: const TextStyle(
-                        color: Colors.black87,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                Column(
-                  children: [
-                    const Text(
-                      '错误',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 12,
-                      ),
-                    ),
-                    Text(
-                      '$mistakes/3',
-                      style: const TextStyle(
-                        color: Colors.black87,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    const Text(
-                      '时间',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 12,
-                      ),
-                    ),
-                    Text(
-                      _formatTime(secondsElapsed),
-                      style: const TextStyle(
-                        color: Colors.black87,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          
-          // 数独网格
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.black, width: 2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 9,
-                ),
-                itemCount: 81,
-                itemBuilder: (context, index) {
-                  int row = index ~/ 9;
-                  int col = index % 9;
-                  bool isSelected = row == selectedRow && col == selectedCol;
-                  bool isHighlighted = row == selectedRow || col == selectedCol ||
-                      (row ~/ 3 == selectedRow ~/ 3 && col ~/ 3 == selectedCol ~/ 3);
-                  
-                  return GestureDetector(
-                    onTap: () => _selectCell(row, col),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isSelected 
-                            ? Colors.blue[100]
-                            : isHighlighted 
-                                ? Colors.blue[50] 
-                                : Colors.white,
-                        border: Border.all(
-                          color: Colors.grey[400]!,
-                          width: 0.5,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // 游戏信息栏
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '难度',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 10,
                         ),
-                        borderRadius: _getCellBorderRadius(row, col),
+                      ),
+                      Text(
+                        _game.difficulty,
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    children: [
+                      const Text(
+                        '错误',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 10,
+                        ),
+                      ),
+                      Text(
+                        '${_game.mistakes}/3',
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const Text(
+                        '时间',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 10,
+                        ),
+                      ),
+                      Text(
+                        _sudokuService.formatTime(_game.secondsElapsed),
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            
+            // 数独网格 - 使用 Expanded 并设置 AspectRatio
+            Expanded(
+              flex: 6,
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                child: AspectRatio(
+                  aspectRatio: 1.0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black, width: 2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: GridView.builder(
+                      padding: EdgeInsets.zero,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 9,
+                        childAspectRatio: 1.0,
+                      ),
+                      itemCount: 81,
+                      itemBuilder: (context, index) {
+                        int row = index ~/ 9;
+                        int col = index % 9;
+                        bool isSelected = row == selectedRow && col == selectedCol;
+                        bool isHighlighted = row == selectedRow || col == selectedCol ||
+                            (row ~/ 3 == selectedRow ~/ 3 && col ~/ 3 == selectedCol ~/ 3);
+                        
+                        return GestureDetector(
+                          onTap: () => _selectCell(row, col),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isSelected 
+                                  ? Colors.blue[100]
+                                  : isHighlighted 
+                                      ? Colors.blue[50] 
+                                      : Colors.white,
+                              border: Border.all(
+                                color: Colors.grey[400]!,
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Center(
+                              child: _game.board[row][col] != 0
+                                  ? Text(
+                                      _game.board[row][col].toString(),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: _game.isFixed[row][col] 
+                                            ? Colors.black 
+                                            : Colors.blue,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            
+            // 工具栏
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildToolButton(
+                    icon: Icons.undo,
+                    label: '撤消',
+                    onPressed: _undoMove,
+                  ),
+                  _buildToolButton(
+                    icon: Icons.brush,
+                    label: '擦除',
+                    onPressed: _eraseCell,
+                  ),
+                  _buildToolButton(
+                    icon: Icons.edit,
+                    label: '备注',
+                    isActive: isNoteMode,
+                    activeText: 'OFF',
+                    onPressed: _toggleNoteMode,
+                  ),
+                  _buildToolButton(
+                    icon: Icons.lightbulb_outline,
+                    label: '提示',
+                    badgeCount: 1,
+                    onPressed: _showHint,
+                  ),
+                ],
+              ),
+            ),
+            
+            // 数字输入键盘
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: List.generate(9, (index) {
+                  int number = index + 1;
+                  return GestureDetector(
+                    onTap: () => _inputNumber(number),
+                    child: Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: selectedNumber == number 
+                            ? Colors.blue 
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       child: Center(
-                        child: board[row][col] != 0
-                            ? Text(
-                                board[row][col].toString(),
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: isFixed[row][col] 
-                                      ? Colors.black 
-                                      : Colors.blue,
-                                ),
-                              )
-                            : null,
+                        child: Text(
+                          number.toString(),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: selectedNumber == number 
+                                ? Colors.white 
+                                : Colors.blue,
+                          ),
+                        ),
                       ),
                     ),
                   );
-                },
+                }),
               ),
             ),
-          ),
-          
-          // 工具栏
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildToolButton(
-                  icon: Icons.undo,
-                  label: '撤消',
-                  onPressed: _undoMove,
-                ),
-                _buildToolButton(
-                  icon: Icons.brush,
-                  label: '擦除',
-                  onPressed: _eraseCell,
-                ),
-                _buildToolButton(
-                  icon: Icons.edit,
-                  label: '备注',
-                  isActive: isNoteMode,
-                  activeText: 'OFF',
-                  onPressed: _toggleNoteMode,
-                ),
-                _buildToolButton(
-                  icon: Icons.lightbulb_outline,
-                  label: '提示',
-                  badgeCount: 1,
-                  onPressed: _showHint,
-                ),
-              ],
-            ),
-          ),
-          
-          // 数字输入键盘
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: List.generate(9, (index) {
-                int number = index + 1;
-                return GestureDetector(
-                  onTap: () => _inputNumber(number),
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: selectedNumber == number 
-                          ? Colors.blue 
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Center(
-                      child: Text(
-                        number.toString(),
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: selectedNumber == number 
-                              ? Colors.white 
-                              : Colors.blue,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  BorderRadius _getCellBorderRadius(int row, int col) {
-    return BorderRadius.circular(0);
-  }
 
   Widget _buildToolButton({
     required IconData icon,
@@ -383,59 +391,63 @@ class _SudokuScreenState extends State<SudokuScreen> {
     String? activeText,
     int? badgeCount,
   }) {
-    return Column(
-      children: [
-        Stack(
-          children: [
-            CircleAvatar(
-              radius: 25,
-              backgroundColor: Colors.grey[200],
-              child: isActive && activeText != null
-                  ? Text(
-                      activeText,
+    return GestureDetector(
+      onTap: onPressed,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: Colors.grey[200],
+                child: isActive && activeText != null
+                    ? Text(
+                        activeText,
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : Icon(
+                        icon,
+                        color: Colors.grey[600],
+                        size: 20,
+                      ),
+              ),
+              if (badgeCount != null && badgeCount > 0)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      badgeCount.toString(),
                       style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 12,
+                        color: Colors.white,
+                        fontSize: 8,
                         fontWeight: FontWeight.bold,
                       ),
-                    )
-                  : Icon(
-                      icon,
-                      color: Colors.grey[600],
-                      size: 24,
-                    ),
-            ),
-            if (badgeCount != null && badgeCount > 0)
-              Positioned(
-                right: 0,
-                top: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.blue,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    badgeCount.toString(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 12,
+            ],
           ),
-        ),
-      ],
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
