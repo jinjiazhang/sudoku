@@ -268,55 +268,102 @@ class _SudokuScreenState extends State<SudokuScreen> {
               ),
             ),
             
-            // 数独网格 - 使用 Expanded 并设置 AspectRatio
+            // 使用统一的LayoutBuilder计算棋盘尺寸并限制控件宽度
             Expanded(
-              flex: 6,
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16),
-                child: AspectRatio(
-                  aspectRatio: 1.0,
-                  child: _buildSudokuGrid(),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // 为工具栏和数字键盘预留空间
+                    double reservedSpace = 150;
+                    double availableHeight = constraints.maxHeight - reservedSpace;
+                    
+                    // 确保availableHeight不会为负数
+                    if (availableHeight < 100) {
+                      availableHeight = 100;
+                    }
+                    
+                    // 计算棋盘的实际尺寸，确保不会挤占下方控件空间
+                    double availableSize = constraints.maxWidth < availableHeight 
+                        ? constraints.maxWidth 
+                        : availableHeight;
+                    
+                    // 基于棋盘占屏幕比例计算间距 - 棋盘越小间距越小
+                    double boardRatio = availableSize / constraints.maxHeight;
+                    double dynamicSpacing = boardRatio > 0.7 ? 8.0 : (boardRatio > 0.5 ? 12.0 : 16.0);
+                    double smallSpacing = boardRatio > 0.7 ? 4.0 : (boardRatio > 0.5 ? 6.0 : 8.0);
+                    
+                    return Column(
+                      children: [
+                        // 棋盘区域 - 使用 Flexible 而不是固定尺寸
+                        Flexible(
+                          child: Center(
+                            child: SizedBox(
+                              width: availableSize,
+                              height: availableSize,
+                              child: _buildSudokuGrid(),
+                            ),
+                          ),
+                        ),
+                        
+                        // 动态间距 - 屏幕窄时自动减小
+                        SizedBox(height: dynamicSpacing),
+                        
+                        // 工具栏 - 宽度不超过棋盘
+                        SizedBox(
+                          width: availableSize,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20, 
+                              vertical: 8
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                _buildToolButton(
+                                  icon: Icons.undo,
+                                  label: '撤消',
+                                  onPressed: _undoMove,
+                                ),
+                                _buildToolButton(
+                                  icon: Icons.brush,
+                                  label: '擦除',
+                                  onPressed: _eraseCell,
+                                ),
+                                _buildToolButton(
+                                  icon: Icons.edit,
+                                  label: '备注',
+                                  isActive: isNoteMode,
+                                  activeText: 'OFF',
+                                  onPressed: _toggleNoteMode,
+                                ),
+                                _buildToolButton(
+                                  icon: Icons.lightbulb_outline,
+                                  label: '提示',
+                                  badgeCount: 1,
+                                  onPressed: _showHint,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        
+                        // 工具栏和键盘动态间距
+                        SizedBox(height: smallSpacing),
+                        
+                        // 数字输入键盘 - 宽度不超过棋盘
+                        SizedBox(
+                          width: availableSize,
+                          child: Container(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                            child: _buildNumberKeyboard(),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
-            ),
-            
-            // 工具栏
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildToolButton(
-                    icon: Icons.undo,
-                    label: '撤消',
-                    onPressed: _undoMove,
-                  ),
-                  _buildToolButton(
-                    icon: Icons.brush,
-                    label: '擦除',
-                    onPressed: _eraseCell,
-                  ),
-                  _buildToolButton(
-                    icon: Icons.edit,
-                    label: '备注',
-                    isActive: isNoteMode,
-                    activeText: 'OFF',
-                    onPressed: _toggleNoteMode,
-                  ),
-                  _buildToolButton(
-                    icon: Icons.lightbulb_outline,
-                    label: '提示',
-                    badgeCount: 1,
-                    onPressed: _showHint,
-                  ),
-                ],
-              ),
-            ),
-            
-            // 数字输入键盘
-            Container(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: _buildNumberKeyboard(),
             ),
           ],
         ),
@@ -637,6 +684,8 @@ class _SudokuScreenState extends State<SudokuScreen> {
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         childAspectRatio: 1.0,
+        mainAxisSpacing: 0,
+        crossAxisSpacing: 0,
       ),
       itemCount: 6, // 2x3 = 6个单元格
       itemBuilder: (context, index) {
@@ -697,6 +746,8 @@ class _SudokuScreenState extends State<SudokuScreen> {
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: subGridSize,
         childAspectRatio: 1.0,
+        mainAxisSpacing: 0,
+        crossAxisSpacing: 0,
       ),
       itemCount: subGridSize * subGridSize,
       itemBuilder: (context, index) {
