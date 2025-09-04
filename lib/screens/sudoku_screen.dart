@@ -199,19 +199,23 @@ class _SudokuScreenState extends State<SudokuScreen> {
                       availableHeight = 200;
                     }
                     
-                    // 棋盘占满整个屏幕宽度
-                    double availableSize = constraints.maxWidth; // 100%宽度
+                    // 计算棋盘尺寸，在宽屏上限制最大尺寸
+                    double maxBoardSize = availableHeight * 0.7; // 限制棋盘为可用高度的70%
+                    double availableSize = constraints.maxWidth < maxBoardSize 
+                        ? constraints.maxWidth 
+                        : maxBoardSize;
                     
-                    // 极小化间距让棋盘绝对最大
-                    double dynamicSpacing = 30.0;  // 极小化棋盘与按钮间距
-                    double smallSpacing = 24.0;    // 极小化按钮与数字键盘间距
+                    // 调整间距以适应不同屏幕尺寸
+                    double dynamicSpacing = 16.0;
+                    double smallSpacing = 12.0;
                     
                     return Column(
                       children: [
-                        // 棋盘区域和时间显示
-                        SizedBox(
-                          width: availableSize,
-                          child: Column(
+                        // 棋盘区域和时间显示 - 确保居中
+                        Center(
+                          child: SizedBox(
+                            width: availableSize,
+                            child: Column(
                             children: [
                               // 时间显示在棋盘上方右侧
                               Row(
@@ -255,6 +259,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
                               ),
                             ],
                           ),
+                        ),
                         ),
                         
                         // 动态间距 - 屏幕窄时自动减小
