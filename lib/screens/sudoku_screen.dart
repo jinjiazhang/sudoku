@@ -285,7 +285,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
                                   icon: Icons.edit,
                                   label: '备注',
                                   isActive: isNoteMode,
-                                  activeText: 'OFF',
+                                  showOnOff: true,
                                   onPressed: _toggleNoteMode,
                                 ),
                                 _buildToolButton(
@@ -334,7 +334,7 @@ class _SudokuScreenState extends State<SudokuScreen> {
     required String label,
     VoidCallback? onPressed,
     bool isActive = false,
-    String? activeText,
+    bool showOnOff = false,
     int? badgeCount,
   }) {
     bool isDisabled = onPressed == null;
@@ -351,41 +351,54 @@ class _SudokuScreenState extends State<SudokuScreen> {
                 CircleAvatar(
                   radius: 26,
                   backgroundColor: isDisabled ? Colors.grey[300] : Colors.grey[200],
-                  child: isActive && activeText != null
-                      ? Text(
-                          activeText,
-                          style: TextStyle(
-                            color: isDisabled ? Colors.grey[400] : Colors.grey,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )
-                      : Icon(
-                          icon,
-                          color: isDisabled ? Colors.grey[400] : Colors.grey[600],
-                          size: 28,
-                        ),
+                  child: Icon(
+                    icon,
+                    color: isDisabled ? Colors.grey[400] : Colors.grey[600],
+                    size: 28,
+                  ),
                 ),
-              if (badgeCount != null && badgeCount > 0)
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      color: Colors.blue,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      badgeCount.toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                // ON/OFF指示器
+                if (showOnOff)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isActive ? Colors.green : Colors.red,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        isActive ? 'ON' : 'OFF',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
-                ),
+                // 数字徽章
+                if (badgeCount != null && badgeCount > 0)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        badgeCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 5),
